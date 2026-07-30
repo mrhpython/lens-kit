@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<!--
+  lens-kit review surface.
+  Adapted from Anthropic skill-creator eval-viewer (Apache-2.0).
+  See LICENSE.Apache-2.0 and NOTICE in this package. Self-contained:
+  EMBEDDED_DATA is injected by viewer.generate_html; no network beyond
+  the optional localhost feedback server.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>lens-kit review</title>
+  <style>
+    :root {
+      --bg: #f6f7f9; --panel: #ffffff; --border: #e1e4e8; --fg: #1b1f23;
+      --muted: #6a737d; --green: #1a7f37; --red: #cf222e; --amber: #9a6700;
+      --blue: #0969da; --chip-bg: #eef1f4;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--fg); }
+    .header { background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 16px; margin: 0; }
+    .header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .progress { color: var(--muted); font-size: 13px; }
+    .summaries { padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .summary-card { background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; font-size: 12px; min-width: 220px; }
+    .summary-card .src { font-weight: 600; font-size: 13px; }
+    .summary-card .kind { display: inline-block; font-size: 10px; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--blue); margin-left: 6px; }
+    .summary-card table { border-collapse: collapse; margin-top: 6px; width: 100%; }
+    .summary-card td { padding: 1px 6px 1px 0; color: var(--muted); }
+    .summary-card td.v { color: var(--fg); font-variant-numeric: tabular-nums; }
+    .envelope { margin-top: 6px; border-top: 1px dashed var(--border); padding-top: 4px; }
+    .caveat { color: var(--amber); font-style: italic; margin-top: 4px; }
+    .main { max-width: 920px; margin: 0 auto; padding: 16px 20px 96px; }
+    .section { background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+    .section-header { padding: 8px 14px; border-bottom: 1px solid var(--border);
+      font-weight: 600; font-size: 13px; display: flex; gap: 8px; align-items: center; }
+    .section-body { padding: 12px 14px; font-size: 13px; }
+    .kind-badge { font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+      padding: 2px 6px; border-radius: 10px; background: var(--chip-bg); color: var(--blue); }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+    .chip { font-size: 11px; padding: 2px 8px; border-radius: 12px;
+      background: var(--chip-bg); font-variant-numeric: tabular-nums; }
+    .chip.tp { background: #dafbe1; color: var(--green); }
+    .chip.tn { background: #eef6ff; color: var(--blue); }
+    .chip.fp { background: #ffebe9; color: var(--red); }
+    .chip.fn { background: #fff1d6; color: var(--amber); }
+    .chip.na { background: #f0f0f0; color: var(--muted); }
+    .verdict { font-weight: 600; }
+    .verdict.SHIP, .verdict.caught-y { color: var(--green); }
+    .verdict.HOLD, .verdict.caught-n { color: var(--red); }
+    .verdict.NEEDS_SOURCES { color: var(--amber); }
+    .verdict.UNKNOWN, .verdict.ERROR { color: var(--muted); }
+    .pill { font-size: 11px; padding: 2px 8px; border-radius: 12px; }
+    .pill.ok { background: #dafbe1; color: var(--green); }
+    .pill.bad { background: #ffebe9; color: var(--red); }
+    .kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px;
+      margin: 6px 0; font-size: 12px; }
+    .kv .k { color: var(--muted); }
+    .kv .val { font-variant-numeric: tabular-nums; }
+    .mismatches { margin: 6px 0 0; padding-left: 18px; }
+    .mismatches li { color: var(--red); font-size: 12px; }
+    .marker { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+      background: #fff8e6; border: 1px solid #ffe2a8; border-radius: 6px;
+      padding: 6px 8px; white-space: pre-wrap; word-break: break-word; }
+    .note { color: var(--muted); font-style: italic; font-size: 12px; }
+    .feedback-textarea { width: 100%; min-height: 90px; font: inherit; font-size: 13px;
+      padding: 8px; border: 1px solid var(--border); border-radius: 6px; resize: vertical; }
+    .feedback-status { color: var(--green); font-size: 12px; min-height: 16px; margin-top: 4px; }
+    .prev-feedback { margin-top: 8px; border-left: 3px solid var(--blue);
+      padding: 4px 10px; background: #f3f8ff; font-size: 12px; }
+    .prev-feedback .label { color: var(--blue); font-weight: 600; font-size: 11px;
+      text-transform: uppercase; letter-spacing: .5px; }
+    .nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel);
+      border-top: 1px solid var(--border); padding: 10px 20px; display: flex;
+      justify-content: center; gap: 10px; }
+    .nav-btn, .done-btn { font: inherit; font-size: 13px; padding: 6px 14px;
+      border: 1px solid var(--border); border-radius: 6px; background: var(--panel);
+      cursor: pointer; }
+    .nav-btn:disabled { opacity: .4; cursor: default; }
+    .done-btn { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .done-btn.ready { background: var(--green); border-color: var(--green); }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4);
+      display: none; align-items: center; justify-content: center; }
+    .overlay.visible { display: flex; }
+    .overlay .card { background: var(--panel); border-radius: 10px; padding: 24px 28px;
+      max-width: 420px; text-align: center; }
+    .empty { color: var(--muted); padding: 40px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1 id="title-label">lens-kit review</h1>
+      <div class="sub" id="sub-label"></div>
+    </div>
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <div class="summaries" id="summaries"></div>
+
+  <div class="main" id="main">
+    <div class="empty" id="empty-state" style="display:none;">No records to review.</div>
+
+    <div class="section" id="record-section" style="display:none;">
+      <div class="section-header">
+        <span class="kind-badge" id="record-kind"></span>
+        <span id="record-title"></span>
+      </div>
+      <div class="section-body" id="record-body"></div>
+    </div>
+
+    <div class="section" id="prev-feedback-section" style="display:none;">
+      <div class="section-header">Previous feedback (diff context)</div>
+      <div class="section-body">
+        <div class="prev-feedback">
+          <div class="label">From the previous review</div>
+          <div id="prev-feedback-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">Your verdict / notes</div>
+      <div class="section-body">
+        <textarea class="feedback-textarea" id="feedback"
+          placeholder="Agree? Disagree with the gate here? Note it — saved to feedback.json."></textarea>
+        <div class="feedback-status" id="feedback-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+    <button class="done-btn" id="done-btn" onclick="submitAll()">Submit all reviews</button>
+    <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+  </div>
+
+  <div class="overlay" id="done-overlay">
+    <div class="card">
+      <h2>Reviews saved</h2>
+      <p class="note">Feedback written to feedback.json. You can close this tab.</p>
+      <button class="nav-btn" onclick="closeDone()">Keep reviewing</button>
+    </div>
+  </div>
+
+  <script>
+    /*__EMBEDDED_DATA__*/
+
+    let feedbackMap = {};      // record id -> feedback text
+    let currentIndex = 0;
+    let visited = new Set();
+
+    function esc(t) {
+      const d = document.createElement("div");
+      d.textContent = (t === null || t === undefined) ? "" : String(t);
+      return d.innerHTML;
+    }
+    function pct(x) {
+      return (typeof x === "number") ? (x * 100).toFixed(1) + "%" : "—";
+    }
+    function num(x) { return (x === null || x === undefined) ? "—" : String(x); }
+
+    async function init() {
+      // Don't pre-fill from a stale feedback.json when previous feedback is
+      // supplied (fresh iteration). Mirrors the upstream eval-viewer rule.
+      const hasPrev = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0;
+      if (!hasPrev) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) for (const r of data.reviews) feedbackMap[r.record_id] = r.feedback;
+        } catch { /* static mode or first run */ }
+      }
+      document.getElementById("title-label").textContent =
+        "lens-kit review: " + (EMBEDDED_DATA.label || "");
+      document.getElementById("sub-label").textContent =
+        (EMBEDDED_DATA.records.length) + " records across "
+        + (EMBEDDED_DATA.summaries.length) + " artifact(s)";
+      renderSummaries();
+      const ta = document.getElementById("feedback");
+      let t = null;
+      ta.addEventListener("input", () => {
+        clearTimeout(t);
+        document.getElementById("feedback-status").textContent = "";
+        t = setTimeout(saveCurrent, 700);
+      });
+      if (!EMBEDDED_DATA.records.length) {
+        document.getElementById("empty-state").style.display = "block";
+        document.getElementById("record-section").style.display = "none";
+        return;
+      }
+      showRecord(0);
+    }
+
+    function renderSummaries() {
+      const el = document.getElementById("summaries");
+      el.innerHTML = "";
+      for (const s of EMBEDDED_DATA.summaries) {
+        const c = document.createElement("div");
+        c.className = "summary-card";
+        let rows = "";
+        const m = s.metrics || {};
+        if (s.kind === "eval") {
+          rows += metricRow("accuracy", pct(m.overall_accuracy))
+            + metricRow("catch", pct(m.catch_rate))
+            + metricRow("FP rate", pct(m.fp_rate))
+            + metricRow("examples", num(s.total_examples) + " (errors " + num(s.errors) + ")");
+        } else if (s.kind === "calibration") {
+          rows += metricRow("acceptable", pct(m.acceptable_rate))
+            + metricRow("on-target", pct(m.on_target_rate))
+            + metricRow("FP rate", pct(m.fp_rate))
+            + metricRow("FN rate", pct(m.fn_rate))
+            + metricRow("unknown", num(m.unknown_count));
+        } else if (s.kind === "mutation") {
+          rows += metricRow("mutants", num(m.total))
+            + metricRow("missed", num(m.missed))
+            + metricRow("seed", num(s.seed));
+        }
+        let env = "";
+        if (s.envelope && s.envelope.metrics) {
+          env = '<div class="envelope">variance envelope (reruns ' + num(s.envelope.reruns) + ')';
+          for (const [k, v] of Object.entries(s.envelope.metrics)) {
+            if (!v) continue;
+            env += '<div>' + esc(k) + ': worst-of-N ' + v.worst_of_n.toFixed(4)
+              + ' (mean ' + v.mean.toFixed(4) + ')</div>';
+          }
+          env += '</div>';
+          if (s.envelope.cache_caveat) env += '<div class="caveat">' + esc(s.envelope.cache_caveat) + '</div>';
+        }
+        c.innerHTML = '<span class="src">' + esc(s.source) + '</span>'
+          + '<span class="kind">' + esc(s.kind) + '</span>'
+          + '<table>' + rows + '</table>' + env;
+        el.appendChild(c);
+      }
+    }
+    function metricRow(k, v) {
+      return '<tr><td>' + esc(k) + '</td><td class="v">' + esc(v) + '</td></tr>';
+    }
+
+    function navigate(d) {
+      const n = currentIndex + d;
+      if (n >= 0 && n < EMBEDDED_DATA.records.length) { saveCurrent(); showRecord(n); }
+    }
+
+    function showRecord(i) {
+      currentIndex = i;
+      const rec = EMBEDDED_DATA.records[i];
+      document.getElementById("progress").textContent =
+        (i + 1) + " of " + EMBEDDED_DATA.records.length;
+      document.getElementById("record-section").style.display = "block";
+      document.getElementById("record-kind").textContent = rec.kind;
+      document.getElementById("record-title").textContent = rec.title;
+      document.getElementById("record-body").innerHTML = renderRecord(rec);
+
+      const prev = (EMBEDDED_DATA.previous_feedback || {})[rec.id];
+      const ps = document.getElementById("prev-feedback-section");
+      if (prev) {
+        document.getElementById("prev-feedback-text").textContent = prev;
+        ps.style.display = "block";
+      } else {
+        ps.style.display = "none";
+      }
+
+      document.getElementById("feedback").value = feedbackMap[rec.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+      document.getElementById("prev-btn").disabled = i === 0;
+      document.getElementById("next-btn").disabled = i === EMBEDDED_DATA.records.length - 1;
+      visited.add(i);
+      if (visited.size >= EMBEDDED_DATA.records.length)
+        document.getElementById("done-btn").classList.add("ready");
+      window.scrollTo(0, 0);
+    }
+
+    function confusionChips(conf) {
+      if (!conf) return '<span class="note">no per-lens confusion (not evaluated)</span>';
+      let h = '<div class="chips">';
+      for (const [lens, v] of Object.entries(conf)) {
+        const cls = v ? v : "na";
+        h += '<span class="chip ' + cls + '" data-lens="' + esc(lens) + '">'
+          + esc(lens) + ': ' + esc(v || "—") + '</span>';
+      }
+      return h + '</div>';
+    }
+    function mismatchList(ms) {
+      if (!ms || !ms.length) return '<div class="note">no mismatches</div>';
+      let h = '<ul class="mismatches">';
+      for (const m of ms) h += '<li>' + esc(m) + '</li>';
+      return h + '</ul>';
+    }
+
+    function renderRecord(rec) {
+      const d = rec.data || {};
+      if (rec.kind === "eval") {
+        return '<div class="kv">'
+          + '<div class="k">domain</div><div class="val">' + esc(d.domain) + '</div>'
+          + '<div class="k">source_id</div><div class="val">' + esc(d.source_id || d.source_name || "") + '</div>'
+          + '<div class="k">score (gold-vs-got)</div><div class="val">' + pct(d.score) + '</div>'
+          + '<div class="k">elapsed</div><div class="val">' + num(d.elapsed) + 's</div>'
+          + '</div>'
+          + '<div class="note">per-lens verdict (gold vs got):</div>'
+          + confusionChips(d.lens_confusion)
+          + '<div class="note">mismatches:</div>' + mismatchList(d.mismatches);
+      }
+      if (rec.kind === "calibration") {
+        const acc = d.acceptable
+          ? '<span class="pill ok">acceptable</span>'
+          : '<span class="pill bad">unacceptable</span>';
+        const tgt = d.on_target ? ' <span class="pill ok">on-target</span>' : '';
+        return '<div class="kv">'
+          + '<div class="k">fixture</div><div class="val">' + esc(d.fixture) + '</div>'
+          + '<div class="k">planted class</div><div class="val">' + esc(d["class"]) + '</div>'
+          + '<div class="k">verdict</div><div class="val verdict ' + esc(d.verdict) + '">' + esc(d.verdict) + '</div>'
+          + '<div class="k">halted</div><div class="val">' + num(d.halted) + '</div>'
+          + '</div>'
+          + '<div>' + acc + tgt + '</div>'
+          + '<div class="note" style="margin-top:8px;">per-lens confusion vs gold:</div>'
+          + confusionChips(d.lens_confusion)
+          + '<div class="note">mismatches:</div>' + mismatchList(d.mismatches);
+      }
+      if (rec.kind === "mutation") {
+        const caught = d.caught
+          ? '<span class="pill ok">caught</span>'
+          : '<span class="pill bad">MISSED (rubber-stamped)</span>';
+        const expect = (d.expected_one_of || []).join(", ");
+        let textBlock;
+        if (d.text) {
+          textBlock = '<div class="note">mutant text:</div><div class="marker">' + esc(d.text) + '</div>';
+        } else {
+          textBlock = '<div class="note">(mutant text not stored in results — '
+            + 'this artifact was written by an older kit version that persisted '
+            + 'only the planted-defect marker)</div>';
+        }
+        let errBlock = d.error
+          ? '<div class="note" style="color:var(--red)">gate error: ' + esc(d.error) + '</div>' : '';
+        return '<div class="kv">'
+          + '<div class="k">mutation type</div><div class="val">' + esc(d.mutation_type) + '</div>'
+          + '<div class="k">gate verdict</div><div class="val verdict ' + esc(d.verdict) + '">' + esc(d.verdict) + '</div>'
+          + '<div class="k">caught if verdict in</div><div class="val">' + esc(expect) + '</div>'
+          + '</div>'
+          + '<div>' + caught + '</div>'
+          + '<div class="note" style="margin-top:8px;">planted-defect marker:</div>'
+          + '<div class="marker">' + esc(d.marker) + '</div>'
+          + textBlock + errBlock;
+      }
+      return '<div class="note">unknown record kind: ' + esc(rec.kind) + '</div>';
+    }
+
+    function saveCurrent() {
+      const rec = EMBEDDED_DATA.records[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") delete feedbackMap[rec.id];
+      else feedbackMap[rec.id] = text;
+      postFeedback("in_progress").then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    function buildReviews(allRecords) {
+      const ts = new Date().toISOString();
+      const reviews = [];
+      if (allRecords) {
+        for (const r of EMBEDDED_DATA.records)
+          reviews.push({ record_id: r.id, kind: r.kind, source: r.source,
+                         feedback: feedbackMap[r.id] || "", timestamp: ts });
+      } else {
+        for (const [record_id, feedback] of Object.entries(feedbackMap))
+          if (feedback.trim()) reviews.push({ record_id, feedback, timestamp: ts });
+      }
+      return reviews;
+    }
+
+    function postFeedback(status) {
+      const reviews = buildReviews(status === "complete");
+      return fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status }),
+      });
+    }
+
+    function submitAll() {
+      const rec = EMBEDDED_DATA.records[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") delete feedbackMap[rec.id];
+      else feedbackMap[rec.id] = text;
+      const payload = JSON.stringify({ reviews: buildReviews(true), status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        const blob = new Blob([payload], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob); a.download = "feedback.json"; a.click();
+        URL.revokeObjectURL(a.href);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+    function closeDone() {
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "TEXTAREA") return;
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); navigate(-1); }
+      else if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); navigate(1); }
+    });
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+lens_kit
+Copyright (c) 2026 Soulfield
+
+This product is licensed under the Apache License, Version 2.0 (the
+"License"); you may not use this product except in compliance with the
+License. A copy of the License is distributed with this product in the file
+LICENSE, and may also be obtained at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+
+
+Third-party components
+======================
+
+The review surface (`src/lens_kit/review/`) is a modified derivative of
+Anthropic's "eval-viewer" tool (generate_review.py + viewer.html), part of the
+skill-creator skill in the anthropic-agent-skills marketplace, distributed
+under the Apache License, Version 2.0.
+
+  Original work: Anthropic, PBC — "eval-viewer"
+  Original license: Apache-2.0
+
+That component retains its own copyright notice, licence text, and a statement
+of the changes made to it, in:
+
+    src/lens_kit/review/LICENSE.Apache-2.0   (verbatim Apache-2.0 text)
+    src/lens_kit/review/NOTICE               (attribution + kept/changed list)
+
+Those two files are the authoritative attribution for that subcomponent. Do not
+remove, rename, or relocate them: they satisfy the attribution and
+"state changes" conditions of the Apache-2.0 licence for a modified work, and
+they are wired into the package data in pyproject.toml.
+
+No other third-party or vendored source is included in this product. Runtime
+dependencies (dspy, pyyaml) are resolved at install time and are not
+redistributed here.

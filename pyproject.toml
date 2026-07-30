@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lens_kit"
+version = "0.1.0"
+description = "Trainable 10-lens validation gate for AI-generated text (DSPy). Provider-agnostic: bring any litellm-compatible endpoint."
+readme = "README.md"
+requires-python = ">=3.10"
+# Licence: Apache-2.0. The grant lives in the root LICENSE file; NOTICE carries the
+# third-party attribution for src/lens_kit/review/. The trove classifier is used rather
+# than a PEP 639 `license = "Apache-2.0"` expression because the SPDX string is only
+# accepted from setuptools>=77 and would require raising the build floor below.
+# Verified 2026-07-30 by building metadata under both setuptools 68.1.2 and 81.0.0:
+# classifier-only succeeds on both; SPDX-string fails on 68; SPDX+classifier fails on 81.
+# If the floor is ever raised to setuptools>=77, replace the classifier with
+#   license = "Apache-2.0"
+#   license-files = ["LICENSE", "NOTICE"]
+# and remove the classifier (77+ rejects a licence classifier alongside an expression).
+# setuptools' default license_files glob picks up LICENSE and NOTICE on both versions.
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    # NOTE: dspy pins gepa transitively (dspy 3.2.x -> gepa 0.0.27).
+    # Do NOT depend on gepa directly — the dspy pin is the contract.
+    "dspy>=3.2,<3.3",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+lens-kit = "lens_kit.cli:entry"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lens_kit = ["profiles/*.yaml", "catches_seed.jsonl"]
+"lens_kit.review" = ["viewer.html", "LICENSE.Apache-2.0", "NOTICE"]

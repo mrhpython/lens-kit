@@ -1,0 +1,49 @@
+lens-kit review surface
+========================
+
+This package (lens_kit.review) is adapted from Anthropic's skill-creator
+"eval-viewer" tool, distributed under the Apache License, Version 2.0.
+
+  Original work: Anthropic, "eval-viewer" (generate_review.py + viewer.html),
+  part of the skill-creator skill in the anthropic-agent-skills marketplace.
+  Original license: Apache-2.0 (see LICENSE.Apache-2.0 in this directory).
+
+The Apache-2.0 license text is reproduced verbatim in LICENSE.Apache-2.0.
+This NOTICE and the attribution above satisfy the license's attribution and
+"state changes" conditions for a modified work.
+
+What was KEPT from the upstream eval-viewer
+-------------------------------------------
+- Self-contained HTML: all review data is embedded into the page by replacing
+  a single "/*__EMBEDDED_DATA__*/" marker, so the page works offline.
+- Tiny stdlib-only HTTP server (http.server.BaseHTTPRequestHandler), no deps.
+- Human verdicts auto-saved to feedback.json via a GET/POST /api/feedback
+  endpoint; the "{reviews: [...]} object, validate then write" save contract.
+- --previous-feedback diffing: prior feedback shown as context per record, and
+  suppressing pre-fill from a stale on-disk feedback.json on a fresh iteration.
+- --port flag, --static standalone-HTML export, keyboard navigation,
+  "submit all" emits a row for EVERY record (so "no feedback" is
+  distinguishable from "not reviewed").
+
+What was CHANGED / ADDED
+------------------------
+- Replaced the skill-creator data model (a "run" = a directory containing an
+  outputs/ subdir, with transcript.md / user_notes.md / grading.json
+  conventions and a recursive find_runs() workspace scan) with lens-kit's flat
+  JSON artifact model. A "record" is now one per-example / per-fixture /
+  per-mutant row parsed from a results JSON file (parser.py).
+- Added artifact-type detection (eval / calibration / mutation) by sniffing
+  schema_version keys with a structural fallback.
+- Added kind-specific rendering: per-lens verdict chips (tp/tn/fp/fn) with
+  gold-vs-got + mismatch strings (eval); verdict vs acceptable/on-target
+  (calibration); planted-defect marker + caught/missed (mutation); plus a
+  per-artifact summary header (accuracy/catch/FP, acceptable/fp/fn rate,
+  mutants-missed) and a variance-envelope block when present.
+- feedback.json keys are "record_id" (the upstream used "run_id"); the loader
+  reads either for backward compatibility.
+- Records are fixed at server startup (no per-GET workspace re-scan), and the
+  default port is 0 (OS-chosen ephemeral) — the upstream killed whoever held a
+  fixed port via lsof; that behaviour was dropped.
+- Stripped skill-creator-only notions (skill name, benchmark "with/without
+  skill" tabs, file-embedding for images/pdf/xlsx outputs) that do not map to
+  lens-kit artifacts.

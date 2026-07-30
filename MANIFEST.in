@@ -1,0 +1,21 @@
+# The sdist must carry conftest.py. It is not optional: its autouse fixture
+# strips every *_API_KEY from the environment and chdirs each test to a temp
+# directory. Without it, `pip download` + `pytest` would run the suite against
+# whatever ambient credentials the machine happens to have — the opposite of a
+# hermetic test run, and a real way to spend someone else's money by accident.
+recursive-include tests conftest.py
+
+# Ship the licence, the attribution and the docs the README links to, so an
+# sdist is self-describing rather than a code drop with dead links.
+include LICENSE
+include NOTICE
+include CHANGELOG.md
+include RUNS.md
+recursive-include docs *.md
+recursive-include agent *.md
+
+# Never ship build/venv/cache noise.
+global-exclude *.py[cod]
+global-exclude __pycache__
+prune .venv
+prune .pytest_cache

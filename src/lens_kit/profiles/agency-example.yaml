@@ -1,0 +1,429 @@
+# lens-kit profile — agency example
+#
+# This is the production agency-domain vocabulary, shipped as a worked
+# example. Copy it, replace the domain vocabulary with YOUR terms, point
+# llm at YOUR endpoint. An empty profile (all lists omitted) means: no
+# deterministic suppression at all — pure LLM detection.
+#
+# Two kinds of lists in here:
+#   [domain]  — agency/business-specific carve-outs. Replace for your domain.
+#   [general] — general-English temporal/structural routing between lenses.
+#               Usually keep as-is; trim only if your domain conflicts.
+
+name: agency-example
+
+llm:
+  # Any litellm-compatible model string. Examples:
+  #   xai/grok-4-1-fast-reasoning
+  #   openai/gpt-4o
+  #   anthropic/claude-sonnet-4-5
+  #   ollama_chat/llama3        (set api_base: http://localhost:11434, no api_key_env)
+  #   openai/meta-llama/Llama-3.3-70B-Instruct  (set api_base to any OpenAI-compatible host)
+  # No default vendor on purpose — name your own endpoint here. Examples above.
+  model: REPLACE_ME/your-model-id
+  api_base: null
+  # NAME of the environment variable holding your key — never the key itself.
+  # Omit (null) for keyless local endpoints like Ollama.
+  api_key_env: YOUR_PROVIDER_API_KEY
+  temperature: 0.1
+  max_tokens: 8000
+
+vocabulary:
+  # [domain] Business RHETORIC that never carries numbers — suppressed as
+  # Truth false positives. NARROWED 2026-03-22: phrases that commonly wrap
+  # fabricated statistics ("industry benchmark", "market leader", "proven
+  # track record", ...) were deliberately REMOVED because the substring
+  # match can't distinguish qualitative use from number-wrapping use.
+  truth_whitelist:
+    - best practice
+    - best practices
+    - best-in-class
+    - best in class
+    - competitive advantage
+    - competitive landscape
+    - competitive positioning
+    - commonly used
+    - commonly accepted
+    - widely adopted
+    - widely recognized
+    - widely used
+    - well-established
+    - well established
+    - standard practice
+    - standard approach
+    - cost-effective
+    - market fit
+    - product-market fit
+    - go-to-market
+    - stakeholder
+    - thought leader
+    - mission-critical
+    - enterprise-grade
+    - turn-key
+    - turnkey
+
+  # [domain] Internal tool outputs trusted as self-sourced. External
+  # attributions ("according to BIS") are NOT listed — they may be fabricated.
+  internal_source_phrases:
+    - from hledger
+    - from grafana
+    - from dashboard
+    - from our database
+    - from our records
+    - from our system
+    - from internal data
+    - per internal report
+    - based on the grafana
+    - based on our grafana
+    - based on the dashboard
+    - based on our dashboard
+    - based on internal data
+    - based on our records
+
+  # [general] Full-text gate: text must contain first-person language before
+  # any first-party suppression applies.
+  first_party_signals:
+    - 'our '
+    - 'we '
+    - 'my '
+    - our q1
+    - our q2
+    - our q3
+    - our q4
+    - q1 revenue
+    - q2 revenue
+    - q3 revenue
+    - q4 revenue
+
+  # [domain] Narrow-window operational-reporting phrases — the reporting
+  # entity is its own source for these.
+  first_party_context:
+    - our q1 revenue
+    - our q2 revenue
+    - our q3 revenue
+    - our q4 revenue
+    - our total revenue
+    - our annual revenue
+    - our monthly revenue
+    - net retention rate
+    - our churn rate
+    - our arr
+    - we grew revenue
+    - we increased revenue
+    - we reduced churn
+    - our customer acquisition cost
+    - our cac
+    - our ltv
+    - our gross margin
+    - our operating margin
+    - year-over-year
+    - yoy
+    - quarter-over-quarter
+    - qoq
+    - held steady
+    - profitability
+
+  # [domain] External-facing claim markers — violations mentioning these are
+  # NEVER suppressed by first-party filtering.
+  external_claim_signals:
+    - $
+    - '%'
+    - revenue
+    - roi
+    - market share
+    - clients
+    - customers
+    - users
+    - growth rate
+
+  # [general] Forward-looking signals — routes a Truth violation to
+  # Extrapolation territory (suppressed in Truth).
+  future_signals:
+    - 'will '
+    - by 202
+    - by 203
+    - by end of
+    - within the next
+    - going forward
+    - is expected to
+    - projected to
+    - 'reaches '
+
+  # [general] Present-tense fabrication markers — claim stays Truth even in
+  # forward-looking surroundings.
+  present_tense_override:
+    - has already
+    - have already
+    - has committed
+    - have committed
+    - 'currently '
+    - are already
+    - is already
+    - already replaced
+    - already adopted
+    - has been
+    - have been
+
+  # [general] Scenario labels — contradictions between labeled scenarios are
+  # analysis, not contradictions.
+  scenario_labels:
+    - bull case
+    - bear case
+    - base case
+    - scenario 1
+    - scenario 2
+    - scenario a
+    - scenario b
+    - optimistic case
+    - pessimistic case
+    - 'assuming '
+    - best case
+    - worst case
+
+  # [general] Past-tense signals — past-tense fabrications are Truth
+  # territory, suppressed in Extrapolation.
+  past_tense_signals:
+    - 'raised '
+    - 'caused '
+    - 'produced '
+    - resulted in
+    - 'was '
+    - 'were '
+    - led to
+    - driven by
+    - 'surged '
+    - marked the
+    - confirmed that
+
+  # [general] Future markers that out-prioritize past-tense routing.
+  future_counter_signals:
+    - 'will '
+    - by 202
+    - by 203
+    - projected
+    - expected to
+    - forecast
+
+  # [general] Confidence qualifiers — paired with a [PROJECTION]/[ESTIMATE]
+  # marker these make a projection already-qualified.
+  confidence_keywords:
+    - low confidence
+    - medium confidence
+    - high confidence
+    - 'confidence:'
+    - assuming
+    - estimated range
+
+  # [general] Plan/recommendation language that triggers the Structure lens.
+  # NOTE: if recommendation/financial/marketing trigger lists are ALL empty,
+  # Structure runs on everything (a lens is never silently disabled).
+  recommendation_signals:
+    - 'should '
+    - recommend
+    - 'plan to '
+    - we need to
+    - action item
+    - next step
+    - 'deploy '
+    - 'migrate '
+    - rollout
+    - roll out
+    - 'launch '
+    - precondition
+    - prerequisite
+    - step 1
+    - phase 1
+    - must be done
+    - must complete
+    - must be in place
+
+  # [domain] Financial projections with targets are plans.
+  financial_plan_signals:
+    - financial model
+    - year 1 revenue
+    - year 2 revenue
+    - break-even
+    - break even
+    - npv
+    - arr growth
+    - cac payback
+    - churn rate
+    - base case
+    - worst case
+    - best case
+    - sensitivity
+    - 'year 1:'
+    - 'year 2:'
+
+  # [domain] Structured marketing/growth-plan markers.
+  marketing_plan_signals:
+    - strategic marketing plan
+    - saas marketing plan
+    - t2d3
+    - keyword gap
+    - content cluster
+    - channel strategy
+    - paid strateg
+
+  # [general] Preconditions-present / rollback-present detection. If BOTH
+  # are detected in the text, Structure violations are cleared.
+  precondition_keywords:
+    - precondition
+    - prerequisite
+    - before starting
+    - must be true
+  rollback_keywords:
+    - rollback
+    - revert
+    - undo
+    - fall back
+    - restore
+
+  # [general] Citation complaints belong to Truth/Extrapolation — Structure
+  # violations matching these are removed.
+  citation_overlap_signals:
+    - '[source]'
+    - '[estimate]'
+    - '[projection]'
+    - '[unknown]'
+    - citation
+    - lacks source
+    - no source
+    - without source
+    - 'lacks ['
+    - 'without ['
+    - marker
+    - missing source
+
+  # [domain] Financial models with stated basis — "source" complaints suppressed.
+  stated_basis_phrases:
+    - based on last
+    - derived from
+    - current blended
+    - current pricing
+    - actual data
+    - q1 actuals
+    - q2 actuals
+    - q3 actuals
+    - q4 actuals
+
+# [domain] Per-domain strictness preambles, prepended to the domain field
+# every lens sees. Keys match domain_detection keys.
+domain_rules:
+  finance: |
+    [DOMAIN: FINANCE] — Strict numerical truth required.
+    - All numbers, projections, ROI claims MUST have [SOURCE] citation or be marked [ESTIMATE] with confidence level.
+    - IF claim includes '$X million' or 'Y% growth' THEN REQUIRE verifiable basis BECAUSE financial decisions depend on accuracy.
+    - Flag contradictions in financial logic (e.g., 'high risk, high return' without risk metrics).
+    - No [HYPOTHESIS] for revenue models; use [PROJECTION] only with historical data.
+    - EXCEPTION for Extrapolation lens: If a projection already uses [PROJECTION] marker with a confidence level, OR uses [ESTIMATE] marker with a stated range or basis, do NOT require an additional [SOURCE] citation — the uncertainty marker itself is sufficient qualification.
+  marketing: |
+    [DOMAIN: MARKETING] — Strategic creativity allowed, but enforce causality.
+    - Allow [HYPOTHESIS] for untested strategies (e.g., 'social media campaign could increase leads').
+    - IF strategy proposed THEN REQUIRE IF/THEN/BECAUSE chain BECAUSE marketing needs measurable impact.
+    - Numbers (e.g., '50% traffic increase') need [ESTIMATE] with basis; avoid fabricated metrics.
+    - Flag if claims contradict prospect profile (e.g., 'enterprise focus' vs SMB site).
+  seo: |
+    [DOMAIN: SEO] — Data-driven optimization required.
+    - All metrics (rankings, traffic, conversions) MUST have [SOURCE] (e.g., 'Google Analytics data') or [UNKNOWN].
+    - IF keyword strategy proposed THEN REQUIRE search volume data BECAUSE SEO is empirical.
+    - Flag fabricated competitor analyses; require [HYPOTHESIS] for predictions.
+    - Enforce Structure: Preconditions include current SEO audit.
+  competitor: |
+    [DOMAIN: COMPETITOR] — Factual comparison required.
+    - All competitor claims (market share, pricing, features) MUST cite a source or be marked [UNKNOWN].
+    - Flag fabricated competitor names or fictional market share percentages.
+    - Positioning claims need evidence; 'industry leader' requires data.
+
+# [domain] Domain auto-detection keywords. Order = priority (first match
+# wins). Empty mapping -> every text validates as 'general'.
+domain_detection:
+  finance:
+    - revenue
+    - roi
+    - arr
+    - cagr
+    - valuation
+    - $
+    - profit
+    - margin
+    - ebitda
+    - funding
+    - investment
+    - quarterly
+    - fiscal
+    - earnings
+    - dividend
+  seo:
+    - seo
+    - keyword
+    - ranking
+    - backlink
+    - serp
+    - organic traffic
+    - domain authority
+    - page rank
+  marketing:
+    - campaign
+    - conversion
+    - engagement
+    - leads
+    - click-through
+    - ctr
+    - impressions
+    - bounce rate
+    - brand awareness
+    - target audience
+  competitor:
+    - competitor
+    - market share
+    - 'vs '
+    - compared to
+    - outperform
+    - benchmark
+    - industry leader
+
+# [domain] Customer-vocabulary slots for the planted-flaw calibration battery
+# (`lens-kit calibrate generate`). TEMPLATE-based, no LLM calls; these are the
+# only customer-specific strings interpolated into the fixtures. Replace with
+# YOUR company/product/audience so the battery reads like your real content —
+# the planted flaws (contradiction / dark pattern / uncited statistic) are
+# structural and identical regardless of the slot values.
+calibration:
+  company: Acme Agency
+  product: our AI review platform
+  audience: agency owners evaluating AI tools
+  competitor: traditional agencies
+  output_type: marketing copy
+  price: 49 a month
+  stat: 87% of buyers
+  metric: 3x improvement in reply rates
+  timeframe: 90 days
+
+# [domain] Deterministic consistency tripwires (`lens-kit consistency`).
+# No LLM, no network. These are EXAMPLE entries — replace `deny` with YOUR
+# internal vocabulary so it can never leak into customer-facing copy.
+consistency:
+  # Evidence markers whose count must survive source -> rendered outputs.
+  # Keep these unless your house style uses different honesty tokens.
+  markers:
+    - "[UNVERIFIED]"
+    - "[ESTIMATE]"
+    - "[PROJECTION]"
+  # Case-insensitive literal strings that must NEVER reach customer-facing
+  # copy. One hit = a consistency violation (exit 6) no score overrides.
+  # EXAMPLES of the two classes the validator's memory says leak most:
+  #   - internal lens / scoring vocabulary and counts
+  #   - cost / margin / per-unit-price data
+  # Replace with the actual phrases YOUR internal docs use.
+  deny:
+    # internal lens-pipeline vocabulary (example placeholders)
+    - "lens gate"
+    - "per_lens"
+    - "rollouts"
+    - "checkpoint sha"
+    # cost / margin data that should stay internal (example placeholders)
+    - "cost per rollout"
+    - "gross margin"
+    - "COGS"
+    - "internal cost"
