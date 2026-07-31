@@ -309,6 +309,17 @@ def _build_parser() -> argparse.ArgumentParser:
                       help="Path to catches.jsonl (default: ./catches.jsonl)")
     cexp.add_argument("--domain", default=None, help="Filter catches by domain")
 
+    scr = sub.add_parser(
+        "scrub",
+        help="Deterministic PII scan/scrub (regex, no LLM): scrubbed text to "
+             "stdout, findings (type + offsets, never the value) to stderr; "
+             "exit 6 on any finding (tripwire)")
+    scr.add_argument("file", help="Text file to scan")
+    scr.add_argument("--json", action="store_true",
+                     help="Emit {findings, scrubbed_text} JSON to stdout instead "
+                          "(findings carry type/severity/offsets only — raw "
+                          "values are never echoed)")
+
     intg = sub.add_parser(
         "integrity",
         help="Gate-integrity trend monitor: pass-rate trend, runs/days since the "
@@ -984,6 +995,46 @@ def _catches_export(args, cat, argv) -> int:
     return 0
 
 
+def _cmd_scrub(args) -> int:
+    """Deterministic PII tripwire. Exit 0 = clean, 6 = findings, 2 = bad input.
+
+    Raw matched values are NEVER printed — findings identify type, severity,
+    and character offsets so the caller can locate the hit without the secret
+    propagating into logs, CI output, or shell history.
+    """
+    from .pii import scan
+
+    missing = _missing_files([args.file])
+    if missing:
+        print(f"error: file not found: {missing}", file=sys.stderr)
+        return 2
+    text = open(args.file, encoding="utf-8").read()
+    result = scan(text)
+
+    findings = [
+        {"type": m.pii_type, "severity": m.severity,
+         "start": m.start, "end": m.end}
+        for m in result.matches
+    ]
+    if args.json:
+        print(json.dumps({
+            "clean": not result.has_pii,
+            "halt": result.halt,
+            "halt_reason": result.halt_reason,
+            "findings": findings,
+            "scrubbed_text": result.scrubbed_text,
+        }, indent=2))
+    else:
+        print(result.scrubbed_text, end="")
+        for f in findings:
+            print(f"PII {f['severity'].upper()}: {f['type']} "
+                  f"at {f['start']}-{f['end']}", file=sys.stderr)
+        if result.halt:
+            print(f"HALT: {result.halt_reason}", file=sys.stderr)
+
+    return 6 if result.has_pii else 0
+
+
 def _cmd_integrity(args, argv) -> int:
     from .config import IntegrityConfig
     from .integrity import run_integrity
@@ -1087,6 +1138,8 @@ def main(argv=None) -> int:
         return _cmd_consistency(args, argv)
     if args.command == "catches":
         return _cmd_catches(args, argv)
+    if args.command == "scrub":
+        return _cmd_scrub(args)
     if args.command == "integrity":
         return _cmd_integrity(args, argv)
     if args.command == "improve":

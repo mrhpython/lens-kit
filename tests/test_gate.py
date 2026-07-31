@@ -80,14 +80,18 @@ def test_truth_violation_fails_gate():
 
 
 def test_rights_halt_stops_pipeline():
+    # Fixture must be PII the REGEX pre-pass cannot see (a context-judgment
+    # violation), so this exercises the LLM Rights halt path — structured
+    # PII like an SSN literal now halts earlier, in the deterministic
+    # pre-pass (see test_pii_prepass_halts_before_any_llm_call).
     gate = make_stub_gate(overrides={
         "rights": dict(halt="true", has_violations="true",
-                       violations='[{"issue": "SSN exposed", "severity": "critical", "pii_type": "ssn"}]'),
+                       violations='[{"issue": "Dark pattern: fabricated urgency", "severity": "critical", "pii_type": ""}]'),
     })
-    result = gate(text="SSN: 123-45-6789")
+    result = gate(text="Only 2 seats left — everyone in your industry already upgraded.")
     assert result.halted is True
     assert result.passed is False
-    assert result.halt_reason == "SSN exposed"
+    assert result.halt_reason == "Dark pattern: fabricated urgency"
     # Pipeline stopped: only rights recorded, downstream lenses never called
     assert set(result.per_lens) == {"rights"}
     assert gate.truth.calls == []
@@ -255,3 +259,26 @@ def test_format_conflict_intra_passage_is_honest():
     assert "vs ''" not in single and "single passage" in single
     same = _format_conflict({"claim_a": "X", "claim_b": "X"})
     assert "'X' vs 'X'" not in same and "single passage" in same
+
+
+def test_pii_prepass_halts_before_any_llm_call(stub_gate_factory):
+    """Critical structured PII must stop the gate BEFORE the text reaches
+    a provider — the stubbed Rights predictor must never be consulted."""
+    for parallel in (False, True):
+        gate = stub_gate_factory(parallel=parallel)
+        result = gate(text="charge card 4111 1111 1111 1111 for the renewal")
+        assert result.halted and not result.passed
+        assert "credit_card" in result.halt_reason
+        assert result.per_lens == {"rights": False}
+        assert all(v.lens == "rights" for v in result.violations)
+        assert "4111 1111 1111 1111" not in result.fixed_text  # scrubbed
+        assert gate.rights.calls == [], f"provider consulted (parallel={parallel})"
+
+
+def test_pii_prepass_lets_warning_grade_matches_through(stub_gate_factory):
+    """Emails/phones are context calls for the LLM Rights lens — the
+    deterministic pre-pass must NOT fail the gate on them."""
+    gate = stub_gate_factory(parallel=False)
+    result = gate(text="Questions? Contact support@vendor-example.io anytime.")
+    assert result.passed and not result.halted
+    assert len(gate.rights.calls) == 1  # pipeline ran normally

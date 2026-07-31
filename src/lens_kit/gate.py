@@ -27,6 +27,7 @@ import dspy
 from .claims import ClaimExtractor
 from .config import Profile
 from .filters import DeterministicFilters
+from .pii import scan as pii_scan
 from . import signatures as S
 
 CANONICAL_LENSES = (
@@ -308,9 +309,33 @@ class LensGate(dspy.Module):
         gate, AND any non-relevance lens reporting violations fails the
         gate even at warning severity.
         """
+        # ── Lens 0: deterministic PII pre-pass (regex, no LLM call) ──
+        # Critical structured PII (cards, API keys, NI/SSN, credentials)
+        # halts the gate BEFORE the text is sent to any provider — the
+        # secret never leaves the process. Emails/phone numbers are context
+        # judgment calls (contact lines are often legitimate) and stay with
+        # the LLM Rights lens; use ``lens_kit.pii.scan`` or the
+        # ``lens-kit scrub`` CLI for the full deterministic findings.
+        pii = pii_scan(text)
+        if pii.halt:
+            result = LensResult(passed=False, halted=True,
+                                halt_reason=pii.halt_reason,
+                                fixed_text=pii.scrubbed_text)
+            result.per_lens["rights"] = False
+            result.violations = [
+                LensViolation("rights", m.severity,
+                              f"Deterministic PII ({m.pii_type}): '{m.value}'")
+                for m in pii.matches if m.severity == "critical"]
+            return result
+
         if self.parallel:
             return self._forward_parallel(text, domain, context, include_timings)
-        # ── sequential reference path (unchanged) ──
+        return self._forward_sequential(text, domain, context, include_timings)
+
+    def _forward_sequential(self, text: str, domain: str = "general", context: str = "",
+                            include_timings: bool = False) -> LensResult:
+        """Sequential reference path (unchanged semantics; split out of
+        forward() so the PII pre-pass wraps both execution paths once)."""
         t_total_start = time.monotonic()
         timings = {}
 

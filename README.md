@@ -428,6 +428,40 @@ look, they do not adjudicate. Two false-positive boundaries are by design:
 A clean run means "no tripwire fired", not "the artifacts are proven
 consistent". Any check that fires exits `6` and appends a `RUNS.md` row.
 
+## PII pre-pass — Lens 0 (deterministic, no LLM)
+
+An LLM Rights lens is a judgment call; a regex is a tripwire. In the
+author's internal eval (2026-03), the LLM-only Rights lens caught ~50% of
+planted structured-PII patterns — the regex layer catches 100% of them. So
+the gate now runs a deterministic pre-pass **before any provider call**:
+if the text contains a credit card, API key (`sk-`, `sk_live_`, `ghp_`,
+`AKIA`, ...), NI number, SSN, credential assignment, or connection string,
+the gate halts and the secret **never leaves your process** — the text is
+not sent to the LLM at all.
+
+Emails and phone numbers are deliberately NOT gate-failing here: a contact
+line in a deliverable is usually intentional, and that judgment stays with
+the LLM Rights lens. The deterministic findings are still available:
+
+```bash
+# Scrubbed text to stdout, findings to stderr, exit 6 on any finding:
+lens-kit scrub draft.md
+
+# Machine-readable — findings carry type/severity/offsets, never the value:
+lens-kit scrub draft.md --json
+```
+
+```python
+from lens_kit import pii_scan, pii_scrub
+
+result = pii_scan(text)   # .matches / .halt / .scrubbed_text
+clean = pii_scrub(text)    # "[REDACTED]" replacements, deterministic
+```
+
+The CLI never echoes a matched value — findings identify type and character
+offsets so the hit is locatable without the secret propagating into CI
+logs or shell history.
+
 ## Catches — the institutional-memory loop (no LLM)
 
 A validator's value compounds only if its catches are remembered. `lens-kit

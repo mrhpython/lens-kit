@@ -35,6 +35,9 @@ from .gate import (
     CANONICAL_LENSES, LensGate, LensResult, LensViolation, detect_domain,
     validate_lens_labels,
 )
+from .pii import PIIMatch, PIIScanResult
+from .pii import scan as pii_scan
+from .pii import scrub as pii_scrub
 from .label_audit import backup_dataset, find_suspicious, impact_math, run_label_audit
 from .mutation import (
     CAUGHT_VERDICTS, MUTATION_TYPES, generate_mutants, mutate_text,
@@ -71,6 +74,10 @@ __all__ = [
     "render_relevant_block",
     "render_stats",
     "LLMConfig",
+    "PIIMatch",
+    "PIIScanResult",
+    "pii_scan",
+    "pii_scrub",
     "LensGate",
     "LensResult",
     "LensViolation",
