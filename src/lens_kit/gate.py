@@ -110,6 +110,18 @@ class LensResult:
 
 # ── Domain Auto-Detection ────────────────────────────────────────
 
+def _format_conflict(v: dict) -> str:
+    """Render a contradiction violation honestly.
+
+    Intra-passage conflicts come back with claim_b empty or identical to
+    claim_a, which the raw f-string rendered as "'X' vs 'X'" / "'X' vs ''".
+    """
+    a, b = v.get("claim_a", ""), v.get("claim_b", "")
+    if not b or a == b:
+        return f"CONFLICT (both conflicting clauses are inside this single passage): '{a}'"
+    return f"CONFLICT: '{a}' vs '{b}'"
+
+
 def detect_domain(text: str, domain_keywords: dict) -> str:
     """Auto-detect validation domain via profile keyword lists.
 
@@ -426,8 +438,7 @@ class LensGate(dspy.Module):
         if has_contradiction:
             result.passed = False  # Contradictions are always critical
             all_violations.extend([
-                LensViolation("contradiction", "critical",
-                    f"CONFLICT: '{v.get('claim_a', '')}' vs '{v.get('claim_b', '')}'")
+                LensViolation("contradiction", "critical", _format_conflict(v))
                 for v in contradiction_violations
             ])
         timings["contradiction"] = round(time.monotonic() - t0, 3)
@@ -737,8 +748,7 @@ class LensGate(dspy.Module):
         if has_contradiction:
             result.passed = False
             all_violations.extend([
-                LensViolation("contradiction", "critical",
-                    f"CONFLICT: '{v.get('claim_a', '')}' vs '{v.get('claim_b', '')}'")
+                LensViolation("contradiction", "critical", _format_conflict(v))
                 for v in contradiction_violations])
         timings["contradiction"] = round(time.monotonic() - t0, 3)
 

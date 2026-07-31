@@ -243,3 +243,15 @@ def test_parallel_is_default_after_rollout():
     from lens_kit import LensGate
     assert LensGate().parallel is True
     assert LensGate(parallel=False).parallel is False  # sequential reference still selectable
+
+
+def test_format_conflict_intra_passage_is_honest():
+    """Intra-passage conflicts (claim_b empty or == claim_a) must not
+    render as "'X' vs 'X'" / "'X' vs ''"."""
+    from lens_kit.gate import _format_conflict
+    assert _format_conflict({"claim_a": "revenue doubled", "claim_b": "revenue fell"}) == \
+        "CONFLICT: 'revenue doubled' vs 'revenue fell'"
+    single = _format_conflict({"claim_a": "always free yet billed monthly", "claim_b": ""})
+    assert "vs ''" not in single and "single passage" in single
+    same = _format_conflict({"claim_a": "X", "claim_b": "X"})
+    assert "'X' vs 'X'" not in same and "single passage" in same
