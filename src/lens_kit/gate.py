@@ -147,8 +147,9 @@ class LensGate(dspy.Module):
                    detection, no deterministic suppression).
         auto_fix:  Run the AutoFix error-correction pass on critical
                    auto-fixable violations.
-        fast_mode: Use plain Predict (N=1) for Truth/Extrapolation instead
-                   of BestOfN(N=3). Faster, less strict.
+        fast_mode: Use plain Predict (N=1) for Extrapolation instead of
+                   BestOfN(N=3). Faster, less strict. (Truth is always N=1
+                   since 2026-08-10 — see the constructor note.)
         parallel:  Run independent lenses concurrently per dependency stage
                    (default True). Proven verdict-identical to the sequential
                    reference (mocked byte-identical test + live holdout
@@ -166,18 +167,16 @@ class LensGate(dspy.Module):
         self.parallel = parallel
 
         # Core lens gates.
-        # Truth/Extrapolation: BestOfN(N=3) by default — these are the two
-        # weakest lenses; BestOfN reduces false negatives. fast_mode = N=1.
-        truth_pred = dspy.Predict(S.TruthValidation)
-        if fast_mode:
-            self.truth = truth_pred
-        else:
-            self.truth = dspy.BestOfN(
-                module=truth_pred,
-                N=3,
-                reward_fn=self._truth_strictness_reward,
-                threshold=1.0,  # always run all N (perfect score = 5+ violations)
-            )
+        # Truth: plain Predict (N=1) since 2026-08-10. It previously ran
+        # BestOfN(N=3) with a strictness reward (more violations = better) —
+        # designed when missing citations were the standard. Under the
+        # adjudicated standard (label epoch v4: "uncited market figure =
+        # clean") that reward is a false-positive amplifier, and every banked
+        # eval number measures the N=1 path — the gate now runs what the
+        # harness measures. _truth_strictness_reward is retained for
+        # checkpoint-era compatibility. Extrapolation keeps BestOfN(N=3)
+        # pending its own review; fast_mode = N=1 there.
+        self.truth = dspy.Predict(S.TruthValidation)
         self.causality = dspy.Predict(S.CausalityValidation)
         # Definitional Integrity: independent blocking lens (plain Predict, like
         # causality — not BestOfN). Owns undefined-term + equivocation only;

@@ -16,8 +16,11 @@ single-document gate cannot see those; that is exactly the gap this agent fills.
 > A drop-in system prompt that implements this protocol ships at
 > [`../agent/validator-agent.md`](../agent/validator-agent.md); the verdict
 > receipt templates at [`../agent/receipt-templates.md`](../agent/receipt-templates.md).
-> The kit's CLI is the agent's whole toolbelt — no graph, no service, no network
-> beyond the gate's own LLM call.
+> The kit's CLI is the agent's whole *lens* toolbelt — no graph, no service, no
+> network beyond the gate's own LLM call. It is **not** the agent's whole toolbelt:
+> the protocol also requires the host to give the agent **file read and file
+> search** (see Preconditions). Those two capabilities are the entire reason this
+> tier exists.
 
 ---
 
@@ -25,6 +28,17 @@ single-document gate cannot see those; that is exactly the gap this agent fills.
 
 Before running the loop, these must be true (verify them, do not assume):
 
+- **the host gives the agent file read + file search** (a `Read`/`cat` equivalent and
+  a `grep`/`Glob` equivalent), scoped to the artifact set under validation. This is a
+  **hard precondition, not an optional extra.** The boundary rule *"claims about files,
+  data, or systems need a direct check — the file on disk is the only truth"* is
+  unsatisfiable without it, and every defect this tier is for (cross-file
+  contradiction, a summary number the body never states, a marker dropped between
+  formats, a leaked policy phrase) requires opening more than one file. An agent
+  without these can still call the gate, but it is **not a validator** — it is a
+  second opinion on prose, which is what the gate already is. If your host cannot
+  grant them, stop here and run the deterministic checks only; do not report an
+  agent-tier verdict.
 - **lens-kit is installed and on PATH** — `lens-kit --help` returns exit 0.
 - **a profile YAML exists** for the domain, with its `llm` block pointing at a
   reachable endpoint and the named `api_key_env` variable set (the gate fails

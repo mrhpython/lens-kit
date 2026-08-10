@@ -45,15 +45,38 @@ class TruthValidation(dspy.Signature):
 
 
 class CausalityValidation(dspy.Signature):
-    """AI simulates causation by pattern-matching, not understanding. A recommendation without
-    a mechanism is indistinguishable from a hallucinated causal chain.
+    """Causation is a claim about why, not about order or size. AI asserts it from co-occurrence,
+    from one case, or from nothing.
 
-    Flag ONLY: recommendations or cause-effect claims that have NO causal chain, mechanism, or evidence.
-    PASS any claim that includes an explicit causal chain with evidence (IF/THEN/BECAUSE with rationale,
-    or a named source cited as basis for the causal claim).
+    A causal claim can be six words long. Scan bullet lists, SWOT items and market-trend
+    lines, not only prose.
 
-    This lens checks for MECHANISM only — not for citation completeness (Truth lens) or confidence levels
-    (Extrapolation lens)."""
+    Flag ONLY these wrong causal claims:
+    1. X then Y, therefore X caused Y, no alternative considered
+    2. A correlation, or a gap between self-selected or before/after groups, sold as cause
+    3. One case generalised into a law ("X drives Y") and reused to license further action
+    4. A bare cause-effect statement about the market, competitors or the business, stated
+       flatly as fact with nothing behind it — "Higher pricing limits adoption", "Economic
+       downturns reducing SMB budgets", "Poor quality due to the open instructor model".
+       This fires on its own; it need not be attached to a recommendation.
+    5. A specific outcome asserted as what named initiatives WILL produce — "through SEO,
+       PPC and ABM we will drive a 35% increase in MQLs", "this strategy will ensure growth"
+    6. Direction reversed, or one cause claimed for a plainly multi-cause outcome
+
+    DO NOT flag:
+    - The same number written as an aim or target ("Generate 300 MQLs through inbound",
+      "Achieve 4:1 ROI") — a target asserts no cause
+    - Recommendations, actions and feature-benefit lines that assert no cause — an unstated
+      mechanism is not a defect
+    - Writing briefs and rules about causal language, including their examples of bad
+      phrasing — an instruction is not a claim
+    - Any forecast or projection ("if trends continue, MRR hits $4.2M") — Extrapolation lens
+    - Hedged wording ("tends to", "often")
+    - Reported figures, balances, tables, status description — nothing is being caused
+    - Missing sources — Truth lens
+
+    PASS: text asserting no cause, and causal claims that say why X produces Y and address
+    the obvious alternative."""
     text = dspy.InputField(desc="AI-generated text to validate")
     domain = dspy.InputField(desc="Domain context")
     has_violations = dspy.OutputField(desc="true or false")

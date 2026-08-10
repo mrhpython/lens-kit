@@ -21,7 +21,8 @@ def _save_gate_state(tmp_path, name="ckpt.json") -> Path:
     path = tmp_path / name
     gate.save(str(path))
     state = json.loads(path.read_text())
-    state["truth.module"]["signature"]["instructions"] = MARKER
+    # truth is a bare Predict since 2026-08-10 (no BestOfN wrapper)
+    state["truth"]["signature"]["instructions"] = MARKER
     path.write_text(json.dumps(state))
     return path
 
@@ -66,7 +67,7 @@ def test_round_trip_same_shape_loads_directly(tmp_path):
     gate2 = LensGate()
     report = load_checkpoint(gate2, path, log=lambda *_: None)
     assert report["remapped"] is False
-    assert gate2.truth.module.signature.instructions == MARKER
+    assert gate2.truth.signature.instructions == MARKER
 
 
 def test_remap_bare_gate_checkpoint_into_wrapper(tmp_path):
@@ -77,8 +78,8 @@ def test_remap_bare_gate_checkpoint_into_wrapper(tmp_path):
     wrapper = LensGateWrapper()
     report = load_checkpoint(wrapper, path, log=lambda *_: None)
     assert report["remapped"] is True
-    assert "gate.truth.module" in report["loaded"]
-    assert wrapper.gate.truth.module.signature.instructions == MARKER
+    assert "gate.truth" in report["loaded"]
+    assert wrapper.gate.truth.signature.instructions == MARKER
 
 
 def test_remap_legacy_wrapper_checkpoint_into_bare_gate(tmp_path):
@@ -94,10 +95,12 @@ def test_remap_legacy_wrapper_checkpoint_into_bare_gate(tmp_path):
     gate = LensGate()
     report = load_checkpoint(gate, legacy_path, log=lambda *_: None)
     assert report["remapped"] is True
-    assert "truth.module" in report["loaded"]        # gate.truth -> truth.module
+    assert "truth" in report["loaded"]               # gate.truth -> bare truth
+    # extrapolation still wears the BestOfN wrapper — keeps .module remap covered
+    assert "extrapolation.module" in report["loaded"]
     assert "gate.obsolete_lens" in report["stale"]
     assert report["missing"] == []
-    assert gate.truth.module.signature.instructions == MARKER
+    assert gate.truth.signature.instructions == MARKER
 
 
 def test_candidate_keys_cover_both_remap_directions():

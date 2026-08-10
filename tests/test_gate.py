@@ -13,10 +13,14 @@ def test_default_gate_composes_with_bestofn():
     import dspy
     from lens_kit import LensGate
     gate = LensGate()  # construction needs no configured LM
-    assert isinstance(gate.truth, dspy.BestOfN)
+    # Truth is plain Predict (N=1) since 2026-08-10: the BestOfN strictness
+    # reward is a false-positive amplifier under the v4 adjudicated standard,
+    # and all banked eval numbers measure the N=1 path.
+    assert isinstance(gate.truth, dspy.Predict)
     assert isinstance(gate.extrapolation, dspy.BestOfN)
     fast = LensGate(fast_mode=True)
     assert isinstance(fast.truth, dspy.Predict)
+    assert isinstance(fast.extrapolation, dspy.Predict)
 
 
 def test_canonical_lens_set_is_ten():

@@ -82,20 +82,20 @@ def test_extrap_reward_garbage_is_zero_but_bonus_still_reads_text():
 # ── wiring + threshold semantics ─────────────────────────────────
 
 def test_gate_wires_rewards_with_threshold_one():
-    gate = LensGate()  # default = BestOfN mode
-    assert gate.truth.threshold == 1.0
-    assert gate.truth.N == 3
+    gate = LensGate()  # default mode; truth is plain Predict since 2026-08-10
+    # (strictness reward = FP amplifier under the v4 adjudicated standard).
     assert gate.extrapolation.threshold == 1.0
     assert gate.extrapolation.N == 3
     # BestOfN wraps reward_fn in an internal lambda — identity comparison is
     # impossible, so assert behavioral equivalence through the wrapper.
     marker = _pred(json.dumps([{"issue": "needs [PROJECTION] with confidence"}]))
     for n in (0, 2, 5, 9):
-        assert gate.truth.reward_fn({}, _pred(n)) == truth_reward({}, _pred(n))
         assert gate.extrapolation.reward_fn({}, _pred(n)) == extrap_reward({}, _pred(n))
     assert gate.extrapolation.reward_fn({}, marker) == extrap_reward({}, marker)
-    # The two lenses use DIFFERENT rewards: bonus separates them
-    assert gate.truth.reward_fn({}, marker) != gate.extrapolation.reward_fn({}, marker)
+    # The retained truth reward still behaves (checkpoint-era compatibility)
+    for n in (0, 2, 5, 9):
+        assert truth_reward({}, _pred(n)) == min(n / 5.0, 1.0)
+    assert truth_reward({}, marker) != extrap_reward({}, marker)
 
 
 def test_threshold_one_means_all_n_run_below_five_violations():
