@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-10 — Structure lens: runs unconditionally; scoped precondition/rollback filter
+
+Two defects fixed, found by a mechanical trace of the serving path. First,
+the structure lens used a keyword predicate (`text_has_recommendations`) to
+decide whether to run at all, then reported the skipped case as a clean
+pass — on a realistic corpus that silently disabled the lens for most
+documents while the wire format showed `passed: true`. A detector must not
+decide whether to look using a substring list: structure now runs on every
+request, and the predicate no longer gates dispatch. Second,
+`filter_structure_complete` returned an empty list whenever the text
+contained both a precondition keyword and a rollback keyword — deleting
+every structure finding, related or not. It now drops only violations whose
+issue text is about those topics, and a regression test pins the scoped
+behaviour. Cost note: one additional LLM call per validation on text that
+previously skipped. Extrapolation keeps BestOfN(N=3): a same-day paired
+two-arm measurement showed the wrapper earns its strictness on catch, unlike
+truth's case — receipts in the internal run ledger.
+
 ## 2026-08-10 — Truth lens: BestOfN strictness sampling removed (N=1)
 
 The truth lens previously ran `dspy.BestOfN(N=3)` with a strictness reward

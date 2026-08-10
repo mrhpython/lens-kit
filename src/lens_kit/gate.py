@@ -487,24 +487,21 @@ class LensGate(dspy.Module):
         timings["extrapolation"] = round(time.monotonic() - t0, 3)
 
         # ── Lens 6: Structure ──
-        # Only run on text containing plans/recommendations (with empty
-        # profile vocabulary the trigger returns True — always run).
+        # M2 fix (2026-08-10): runs unconditionally — a detector must not
+        # decide whether to look with a substring list.
         t0 = time.monotonic()
-        if flt.text_has_recommendations(text):
-            structure = self.structure(text=text, domain=enriched_domain)  # ORIGINAL text
-            structure_violations = self._parse_violations(structure.violations)
-            structure_violations = flt.filter_structure_complete(structure_violations, text)
-            structure_violations = flt.filter_structure_stated_basis(structure_violations, text)
-            structure_violations = flt.filter_structure_citation_overlap(structure_violations)
-            has_structure = self._is_true(structure.has_violations) and bool(structure_violations)
-            result.per_lens["structure"] = not has_structure
-            if has_structure:
-                all_violations.extend([
-                    LensViolation("structure", v.get("severity", "warning"), v.get("issue", str(v)))
-                    for v in structure_violations
-                ])
-        else:
-            result.per_lens["structure"] = True  # Auto-pass: no recommendations to check
+        structure = self.structure(text=text, domain=enriched_domain)  # ORIGINAL text
+        structure_violations = self._parse_violations(structure.violations)
+        structure_violations = flt.filter_structure_complete(structure_violations, text)
+        structure_violations = flt.filter_structure_stated_basis(structure_violations, text)
+        structure_violations = flt.filter_structure_citation_overlap(structure_violations)
+        has_structure = self._is_true(structure.has_violations) and bool(structure_violations)
+        result.per_lens["structure"] = not has_structure
+        if has_structure:
+            all_violations.extend([
+                LensViolation("structure", v.get("severity", "warning"), v.get("issue", str(v)))
+                for v in structure_violations
+            ])
         timings["structure"] = round(time.monotonic() - t0, 3)
 
         # ── Auto-Fix (Error Correction) ──
@@ -703,15 +700,15 @@ class LensGate(dspy.Module):
         timings["rights"] = round(time.monotonic() - t0, 3)
 
         # ── Stage B: Truth(ct₁) ∥ Contradiction(text) ∥ Extrapolation(text) ∥ Structure(text) ∥ Consistency(text) ──
-        run_structure = flt.text_has_recommendations(text)
+        # M2 fix (2026-08-10): structure runs unconditionally — the keyword
+        # predicate silently disabled the lens on most real documents.
         jobsB = [
             ("truth", self.truth, dict(text=current_text, domain=truth_domain)),
             ("contradiction", self.contradiction, dict(text=text)),
             ("extrapolation", self.extrapolation, dict(text=text, domain=extrap_domain)),
             ("consistency", self.consistency, dict(text=text)),
+            ("structure", self.structure, dict(text=text, domain=enriched_domain)),
         ]
-        if run_structure:
-            jobsB.append(("structure", self.structure, dict(text=text, domain=enriched_domain)))
         stageB = self._dispatch_stage(jobsB, captured_lm)
 
         # Truth post-process FIRST (its fixed_text feeds Stage C). Verbatim semantics.
@@ -793,20 +790,17 @@ class LensGate(dspy.Module):
         timings["extrapolation"] = round(time.monotonic() - t0, 3)
 
         t0 = time.monotonic()
-        if run_structure:
-            structure = self._unwrap(stageB["structure"])
-            structure_violations = self._parse_violations(structure.violations)
-            structure_violations = flt.filter_structure_complete(structure_violations, text)
-            structure_violations = flt.filter_structure_stated_basis(structure_violations, text)
-            structure_violations = flt.filter_structure_citation_overlap(structure_violations)
-            has_structure = self._is_true(structure.has_violations) and bool(structure_violations)
-            result.per_lens["structure"] = not has_structure
-            if has_structure:
-                all_violations.extend([
-                    LensViolation("structure", v.get("severity", "warning"), v.get("issue", str(v)))
-                    for v in structure_violations])
-        else:
-            result.per_lens["structure"] = True
+        structure = self._unwrap(stageB["structure"])
+        structure_violations = self._parse_violations(structure.violations)
+        structure_violations = flt.filter_structure_complete(structure_violations, text)
+        structure_violations = flt.filter_structure_stated_basis(structure_violations, text)
+        structure_violations = flt.filter_structure_citation_overlap(structure_violations)
+        has_structure = self._is_true(structure.has_violations) and bool(structure_violations)
+        result.per_lens["structure"] = not has_structure
+        if has_structure:
+            all_violations.extend([
+                LensViolation("structure", v.get("severity", "warning"), v.get("issue", str(v)))
+                for v in structure_violations])
         timings["structure"] = round(time.monotonic() - t0, 3)
 
         # ── Stage D: Auto-fix (conditional on critical auto-fixable so far) ──

@@ -112,6 +112,18 @@ def test_structure_complete_override():
     assert flt.filter_structure_complete(v, "Just deploy it.") == v
 
 
+def test_structure_complete_scoped_drop_keeps_unrelated():
+    # M3a (2026-08-10): covering preconditions+rollback drops only violations
+    # ABOUT those topics — an unrelated structure finding must survive.
+    flt = _flt(precondition_keywords=["precondition"], rollback_keywords=["rollback"])
+    text = "Preconditions: staging green. Rollback: redeploy previous tag."
+    unrelated = [{"issue": "no owner named for step 3"}]
+    assert flt.filter_structure_complete(unrelated, text) == unrelated
+    mixed = [{"issue": "no owner named for step 3"},
+             {"issue": "missing rollback plan"}]
+    assert flt.filter_structure_complete(mixed, text) == unrelated
+
+
 def test_structure_trigger_empty_vocab_always_runs():
     assert _flt().text_has_recommendations("Plain analysis, no plans.") is True
     flt = _flt(recommendation_signals=["deploy "])

@@ -279,14 +279,19 @@ class DeterministicFilters:
         )
 
     def filter_structure_complete(self, violations: list, text: str) -> list:
-        """Override Structure to PASS if both preconditions and rollback present."""
+        """When the text covers preconditions AND rollback, drop only the
+        violations about those topics — never the whole list (M3a 2026-08-10:
+        the old ``return []`` zeroed unrelated structure findings on any
+        document containing both keyword families)."""
         pre = _lower_all(self.vocab.precondition_keywords)
         rb = _lower_all(self.vocab.rollback_keywords)
         if not pre or not rb:
             return violations
         text_lower = text.lower()
         if any(kw in text_lower for kw in pre) and any(kw in text_lower for kw in rb):
-            return []
+            topic = tuple(pre) + tuple(rb)
+            return [v for v in violations
+                    if not any(k in v.get("issue", str(v)).lower() for k in topic)]
         return violations
 
     def filter_structure_stated_basis(self, violations: list, text: str) -> list:
