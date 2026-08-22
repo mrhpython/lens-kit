@@ -76,6 +76,18 @@ Process-global alternative: `lm, previous_lm = configure_from_profile(profile)`
 — restore with `dspy.configure(lm=previous_lm)`. Prefer `lm_context` for
 anything scoped (the compile and eval harnesses run inside it).
 
+## Onboard with a coding agent
+
+The repository ships an agent skill at [`skills/lens-kit/SKILL.md`](skills/lens-kit/SKILL.md)
+that teaches Claude Code / Cursor / Codex the real CLI, the fail-closed
+semantics, and the boundary rules. Paste this into your coding agent:
+
+> Clone https://github.com/mrhpython/lens-kit, read skills/lens-kit/SKILL.md,
+> and follow it: install the kit into a venv, run the no-credential
+> quickstart, then set up a profile for my endpoint (or local Ollama) and run
+> `lens-kit validate` on the file I give you. Show me the findings, including
+> any check that returned UNKNOWN.
+
 ## Training and evaluating (C2)
 
 ```bash
