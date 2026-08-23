@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 816 412" role="img" aria-label="Terminal session: the no-credential quickstart. calibrate generate writes 24 fixtures, catches add seeds the memory, scrub redacts an API key and exits 6.">
+  <rect width="816" height="412" rx="8" fill="#0b0e14"/>
+  <rect width="816" height="36" fill="#121826"/>
+  <path d="M0 36 h816" stroke="#1f2937" stroke-width="1"/>
+  <circle cx="20" cy="18" r="6" fill="#f87171"/>
+  <circle cx="40" cy="18" r="6" fill="#f8b44c"/>
+  <circle cx="60" cy="18" r="6" fill="#5eead4"/>
+  <text x="796" y="23" text-anchor="end" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#5b6b8c">no credentials &#183; no network &#183; deterministic</text>
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5">
+    <text x="24" y="66" fill="#f8b44c">$ <tspan fill="#e6e9f0">lens-kit calibrate generate --profile my-profile.yaml --out battery/</tspan></text>
+    <text x="24" y="86" fill="#9aa3b5">Generated 24 fixtures (+ gold sidecars) in battery/</text>
+    <text x="24" y="106" fill="#9aa3b5">&#160;&#160;clean-01-coldemail.txt</text>
+    <text x="24" y="126" fill="#9aa3b5">&#160;&#160;contradiction-01-automation.txt</text>
+    <text x="24" y="146" fill="#9aa3b5">&#160;&#160;darkpattern-01-scarcity.txt</text>
+    <text x="24" y="166" fill="#9aa3b5">&#160;&#160;paltering-01-coldemail.txt</text>
+    <text x="24" y="186" fill="#5b6b8c">&#160;&#160;&#8230; (24 files)</text>
+    <text x="24" y="222" fill="#f8b44c">$ <tspan fill="#e6e9f0">lens-kit catches add --seed</tspan></text>
+    <text x="24" y="242" fill="#9aa3b5">Seeded 6 example catch(es) into catches.jsonl (documented examples &#8212;</text>
+    <text x="24" y="262" fill="#9aa3b5">replace with your own as you record real catches)</text>
+    <text x="24" y="298" fill="#f8b44c">$ <tspan fill="#e6e9f0">lens-kit scrub leak.md</tspan></text>
+    <text x="24" y="318" fill="#f87171">PII CRITICAL: api_key at 11-41</text>
+    <text x="24" y="338" fill="#f87171">HALT: Critical PII detected: api_key</text>
+    <text x="24" y="358" fill="#9aa3b5">ping me at <tspan fill="#f8b44c">[REDACTED]</tspan> when done</text>
+    <text x="24" y="386" fill="#5b6b8c"># exit 6 &#8212; the matched value is never echoed</text>
+  </g>
+</svg>
