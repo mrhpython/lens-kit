@@ -27,6 +27,12 @@ llm:
   api_key_env: YOUR_PROVIDER_API_KEY
   temperature: 0.1
   max_tokens: 8000
+  # Thinking-capable models (Qwen3.x and similar) spend the whole token budget on
+  # reasoning and the gate times out. Forward these to the endpoint to switch it off:
+  # extra_body:
+  #   reasoning_effort: none
+  #   chat_template_kwargs:
+  #     enable_thinking: false
 
 vocabulary:
   # [domain] Business RHETORIC that never carries numbers — suppressed as
