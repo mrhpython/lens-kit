@@ -52,6 +52,10 @@ your machine. There is no bundled key and no default vendor: if the env var
 named in your profile is unset, the kit refuses to run rather than silently
 reaching for something else.
 
+Thinking-capable models (Qwen3.x and similar) need the `extra_body` block in the
+profile uncommented, or they spend the whole token budget reasoning and the gate
+times out — which the kit reports as UNKNOWN, never as a pass.
+
 ```python
 from lens_kit import LensGate, Profile, lm_context
 
@@ -77,6 +81,11 @@ semantics, and the boundary rules. Paste this into your coding agent:
 > quickstart, then set up a profile for my endpoint (or local Ollama) and run
 > `lens-kit validate` on the file I give you. Show me the findings, including
 > any check that returned UNKNOWN.
+
+Starting from folders rather than code? The
+[ICM Gated Starter](https://api.soulfield.one/kit) is a free, Apache-2.0 folder system for
+one agent — map, desk, numbered stages — with this gate wired in as its verify stage
+([repository](https://github.com/mrhpython/icm-gated-starter)).
 
 ## What's in the box
 
