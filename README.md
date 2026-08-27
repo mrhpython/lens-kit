@@ -113,6 +113,7 @@ one agent — map, desk, numbered stages — with this gate wired in as its veri
 | **Gate** (`validate`) | 10-lens review of one document; structured verdict, fail-closed | [Run ledger + verdict semantics](docs/REFERENCE.md#run-ledger-runsmd) |
 | **Train + eval** (`compile`, `eval`) | GEPA compile against your labels; frozen-holdout eval with variance envelopes and versioned receipts | [Training and evaluating](docs/REFERENCE.md#training-and-evaluating-c2) |
 | **Costing gate** | Compile refuses to run past a projected spend/wall-clock threshold; pace monitor kills a run that blows the projection | [The costing gate](docs/REFERENCE.md#the-costing-gate-why-compile-can-refuse-to-run) |
+| **Drift log** | Weekly re-score of a frozen holdout against a fixed anchor and a band set in advance; `OK` or `DRIFT`, no post-hoc judgement | [Our own weekly log, both tiers labelled](docs/WEEKLY-EVAL-LOG.md) |
 | **Calibration** (`calibrate`) | Deterministic planted-flaw battery — prove the gate can FAIL the right things before trusting a PASS | [Calibrating the gate](docs/REFERENCE.md#calibrating-the-gate-c3) |
 | **Mutation control** (`mutate`) | Seeded broken variants of your real holdout; a missed mutant fails the run and is named | [Mutation control](docs/REFERENCE.md#mutation-control--is-my-gate-actually-alive-c4) |
 | **Label audit** (`label-audit`) | When gate and gold disagree, audit the gold before blaming the model | [Label audit](docs/REFERENCE.md#label-audit--audit-the-gold-before-you-blame-the-model-c4) |

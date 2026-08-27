@@ -193,6 +193,15 @@ produce your own scorecard.
 
 ---
 
+## 7. Worked example of §1 and §6 — our own two tiers
+
+[`WEEKLY-EVAL-LOG.md`](WEEKLY-EVAL-LOG.md) publishes our drift log and, with it, the two
+number pairs this doctrine forbids blending: the same 113 holdout rows scored through the
+serving API (0.8966 / 0.1952 — the pair on our homepage) and through the in-process rig
+(0.9333 / 0.2017 — the anchor the weekly run is measured against). The rig scores better.
+The product's number is the published one. That page exists mostly to stop the rig's
+number being read as the product's, which is what §1 and §6 are for.
+
 ## Commands used in this doctrine
 
 Every command and flag is verified against the kit's CLI.
