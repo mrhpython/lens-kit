@@ -19,6 +19,25 @@ The independent review layer that catches confidently-wrong text before it ships
   <img alt="Architecture: your agent's output goes through the lens-kit gate (10 lenses, separate model, outside-in) and comes out PASS (ships) or FLAG (findings, human review). Gate unreachable means FLAG — fail-closed." src="docs/assets/architecture-light.svg" width="100%">
 </picture>
 
+## See it work first (no install)
+
+Paste text into the checker in your browser and read what comes back —
+the flagged line, the reason, and which checks raised nothing:
+**<https://soulfield.one/#try>** · five runs a day, no sign-up, no key.
+
+Or call the same endpoint directly:
+
+```bash
+curl -s https://api.soulfield.one/v1/demo \
+  -H 'content-type: application/json' \
+  -d '{"text": "<the AI output you are about to ship>"}'
+```
+
+That hosted endpoint is the same lens set this repo runs; the difference is
+whose keys and whose data. This kit is how you run it yourself. A run that
+raises nothing means the checks found nothing they could name — it is not
+clearance to publish.
+
 ## Why outside-in
 
 A generator grading its own output is circular. lens-kit runs the review in a
