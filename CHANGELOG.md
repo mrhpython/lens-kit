@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-08-29 — Stop-hook gate published (Claude Code + Agent SDK)
+
+`integrations/claude-code/` ships the outside-in gate as a Claude Code **Stop
+hook** and as a `claude-agent-sdk` hook. It lenses the agent's finished answer;
+on HOLD it blocks the turn and feeds the violations back as revision guidance,
+capped at one rework so it can never wedge. PASS finishes silently; an
+unavailable lens fails open with a visible "not validated" note, or blocks if
+you set `LENS_HOOK_FAIL=closed`. The validator is a separate model — the agent
+does not grade itself.
+
+Two defects fixed on the way out, both the same shape: a default that could not
+work where it mattered.
+
+The profile default was the relative string `profiles/qwen-serve.yaml`, which
+only resolved if the process happened to start in one particular directory. A
+hook never does, so the default failed in the only context this package exists
+for, and the docs carried a "set an absolute path" warning to compensate. It now
+falls back to `builtin_profile_path()` — the profile shipped inside `lens_kit` —
+so an unset `LENS_HOOK_PROFILE` works out of the box.
+
+The suggested hook `timeout` was `30000` ms, justified as "the lens is ~20s".
+That is the typical, not the tail, and gate cost scales with answer length — so
+the suggestion was smallest exactly where answers are most worth gating. It is
+now `120000` ms with the sizing rule written down: **a hook timeout is a ceiling,
+not a delay**, so an oversized one costs nothing when the gate is fast, whereas
+an undersized one fails open *silently* — and a gate that times out on every
+substantial answer is indistinguishable from no gate at all. Measure it on your
+own provider before trusting a smaller number.
+
+The test harness also assumed a directory that exists only in our working repo,
+which errored every test at import in a clean checkout. It now falls back to the
+packaged profile. 33 tests pass against this repo with no credentials.
+
 ## 2026-08-10 — Structure lens: runs unconditionally; scoped precondition/rollback filter
 
 Two defects fixed, found by a mechanical trace of the serving path. First,

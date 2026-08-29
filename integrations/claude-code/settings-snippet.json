@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "lens-stop-hook",
+            "timeout": 120000
+          }
+        ]
+      }
+    ]
+  }
+}

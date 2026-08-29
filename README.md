@@ -122,6 +122,7 @@ one agent — map, desk, numbered stages — with this gate wired in as its veri
 | **Consistency checks** (`consistency`) | Cross-artifact tripwires, pure Python: marker parity, leak scan, number parity | [Consistency checks](docs/REFERENCE.md#consistency-checks-deterministic-no-llm) |
 | **PII pre-pass** (`scrub`) | Deterministic secret/PII halt BEFORE any provider call — the secret never leaves your process | [PII pre-pass](docs/REFERENCE.md#pii-pre-pass--lens-0-deterministic-no-llm) |
 | **Catches memory** (`catches`) | Institutional memory of named defects; recurring patterns get promoted to deterministic checks | [Catches](docs/REFERENCE.md#catches--the-institutional-memory-loop-no-llm) |
+| **Stop-hook gate** (`lens-stop-hook`) | Gates a coding agent's finished answer: Claude Code Stop hook + Claude Agent SDK. On HOLD it blocks the turn and hands the violations back as revision guidance, capped at one rework. The validator is a separate model — the agent never grades itself. | [Claude Code integration](integrations/claude-code/README.md) |
 | **Validator agent** | Model-agnostic protocol for the cross-relationship tier above the gate | [The validator agent](docs/REFERENCE.md#the-validator-agent--the-cross-relationship-tier) |
 
 Exit codes are load-bearing (`3` = too expensive to run, `5` = the gate missed

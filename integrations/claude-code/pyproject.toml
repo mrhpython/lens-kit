@@ -1,0 +1,15 @@
+[project]
+name = "lens-stop-hook"
+version = "0.1.0"
+description = "Claude Code Stop hook that gates output through the Qwen outside-in lens"
+requires-python = ">=3.10"
+dependencies = ["lens_kit"]
+
+[project.optional-dependencies]
+agent-sdk = ["claude-agent-sdk>=0.2"]
+
+[project.scripts]
+lens-stop-hook = "lens_stop_hook.hook:main"
+
+[tool.setuptools.packages.find]
+include = ["lens_stop_hook*"]
