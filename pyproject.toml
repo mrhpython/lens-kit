@@ -41,3 +41,25 @@ where = ["src"]
 [tool.setuptools.package-data]
 lens_kit = ["profiles/*.yaml", "catches_seed.jsonl"]
 "lens_kit.review" = ["viewer.html", "LICENSE.Apache-2.0", "NOTICE"]
+
+[tool.pytest.ini_options]
+# The kit's own suite lives in tests/. A bare `pytest` from a clean clone broke
+# with 7 collection errors once integrations/claude-code/ was added, because:
+#   - its tests/conftest.py collides with tests/conftest.py — neither directory
+#     is a package, and "claude-code" cannot become one (a hyphen is not a valid
+#     Python identifier), so both register as top-level module `conftest`; and
+#   - its lens_stop_hook module is not installed by this project's dev extra.
+# Scoping collection to tests/ fixes both. Measured at 3ad71c9: 515 passed,
+# 2 skipped (517 collected). The 2 skips are guarded on eval data deliberately
+# kept private, so a bare "517 tests pass" would be false.
+#
+# Do NOT add --import-mode=importlib here: tests/ use `from conftest import
+# make_stub_gate`, which needs the default prepend mode to resolve.
+#
+# LIMITATION — this does NOT cover integrations/. That suite (33 tests) needs
+# the integration installed alongside this package; it depends on lens_kit and
+# is not installable on its own:
+#     pip install -e ".[dev]" && pip install -e integrations/claude-code
+#     python -m pytest integrations/claude-code
+# This repo has no CI, so nothing runs either suite automatically.
+testpaths = ["tests"]
