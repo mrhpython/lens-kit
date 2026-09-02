@@ -1,0 +1,12 @@
+[project]
+name = "lens-grok-hook"
+version = "0.1.0"
+description = "Grok Stop hook for the lens-kit outside-in validation gate"
+requires-python = ">=3.10"
+dependencies = ["lens_kit"]
+
+[project.scripts]
+lens-grok-stop-hook = "lens_grok_hook.hook:main"
+
+[tool.setuptools.packages.find]
+include = ["lens_grok_hook*"]
