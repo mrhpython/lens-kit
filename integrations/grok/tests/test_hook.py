@@ -71,11 +71,20 @@ def test_missing_reason_still_validates_for_compat_payloads():
     assert seen["text"] == "A substantive final answer."
 
 
-def test_subagent_stop_does_not_call_gate():
+def test_main_stop_with_subagent_type_skips():
     never = lambda *_: (_ for _ in ()).throw(AssertionError("gate called"))
     event = _event()
     event["subagentType"] = "explore"
     assert hook.decide(event, never) == {}
+
+
+def test_subagent_stop_event_validates():
+    seen = {}
+    event = _event()
+    event["hookEventName"] = "subagent_stop"
+    event["subagentType"] = "explore"
+    hook.decide(event, _result(Verdict.passed(), seen))
+    assert seen["text"] == "A substantive final answer."
 
 
 def test_fail_first_stop_blocks_with_specific_guidance():

@@ -270,15 +270,26 @@ def _unknown_message(note: str) -> str:
     )
 
 
+def _event_name(event: dict) -> str:
+    return str(event.get("hookEventName") or event.get("hook_event_name") or "").casefold()
+
+
+def _is_subagent_stop(event: dict) -> bool:
+    name = _event_name(event)
+    return name in {"subagent_stop", "subagentstop"}
+
+
 def decide(
     event: dict,
     evaluate_fn: Callable[[str, str, str], Verdict] = evaluate,
 ) -> dict:
     """Return Grok Stop-hook JSON for one decoded event."""
 
-    if event.get("subagentType") or event.get("subagent_type"):
+    # Main-agent Stop must not lens a nested agent. SubagentStop is the
+    # event that carries the nested agent's finished text.
+    if (event.get("subagentType") or event.get("subagent_type")) and not _is_subagent_stop(event):
         return {}
-    if not _is_end_turn(event):
+    if not _is_subagent_stop(event) and not _is_end_turn(event):
         return {}
 
     text = _candidate_text(event)
