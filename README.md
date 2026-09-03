@@ -54,14 +54,16 @@ fails closed.
 python -m pip install \
   "lens-kit @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0"
 
+# Copy the packaged example profile into the current directory:
+python -c 'from importlib.resources import files; from pathlib import Path; Path("my-profile.yaml").write_text(files("lens_kit").joinpath("profiles/agency-example.yaml").read_text())'
+echo 'Our Q3 revenue grew 40% year-over-year and will keep growing.' > report.md
+
 # 1. No credentials, no network — the deterministic parts of the kit:
-lens-kit calibrate generate --profile src/lens_kit/profiles/agency-example.yaml --out battery/
+lens-kit calibrate generate --profile my-profile.yaml --out battery/
 lens-kit catches add --seed          # seeds the institutional-memory loop
-lens-kit scrub README.md             # deterministic PII pre-pass (exit 6 on a finding)
+lens-kit scrub report.md             # deterministic PII pre-pass (exit 6 on a finding)
 
 # 2. The actual gate. ONE model endpoint — any litellm target:
-cp src/lens_kit/profiles/agency-example.yaml my-profile.yaml
-echo 'Our Q3 revenue grew 40% year-over-year and will keep growing.' > report.md
 lens-kit validate report.md --profile my-profile.yaml --json
 ```
 

@@ -16,7 +16,7 @@ import asyncio
 from typing import Awaitable, Callable
 
 from .core import evaluate as _default_evaluate
-from .hook import _fail_closed, decide
+from .hook import _fail_closed, _requires_escalation, decide
 from .transcript import final_assistant_text
 from .verdict import Verdict
 
@@ -59,10 +59,13 @@ def make_stop_hook(
     async def stop_cb(inp: dict, tool_use_id=None, ctx=None) -> dict:
         try:
             return await asyncio.to_thread(_run_gate, inp)
-        except Exception as e:  # noqa: BLE001 — fail per policy, never wedge
+        except Exception:  # noqa: BLE001 — fail per policy, never wedge
+            if _requires_escalation():
+                return {"decision": "block", "reason":
+                        "Lens verdict UNKNOWN; disposition ESCALATE. This workflow is "
+                        "configured as public/high-risk, so unvalidated output must not ship."}
             if _fail_closed() and not inp.get("stop_hook_active"):
-                return {"decision": "block",
-                        "reason": f"Lens hook error — not validated ({e})."}
-            return {"systemMessage": f"⚠ Lens hook error — not validated ({e})"}
+                return {"decision": "block", "reason": "Lens hook error — not validated."}
+            return {"systemMessage": "⚠ Lens hook error — not validated"}
 
     return stop_cb

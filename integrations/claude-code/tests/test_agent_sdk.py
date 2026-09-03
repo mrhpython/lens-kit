@@ -48,6 +48,24 @@ def test_hold_restop_downgrades_to_warning():
     assert "systemMessage" in out
 
 
+def test_rights_hold_restop_remains_blocked():
+    v = Verdict.hold([{"lens": "rights", "issue": "do not echo this"}])
+    cb = agent_sdk.make_stop_hook(evaluate=_fake(v), extract_text=lambda inp: "x")
+    out = _run(cb, {"stop_hook_active": True})
+    assert out["decision"] == "block"
+    assert "HALT" in out["reason"]
+    assert "do not echo this" not in out["reason"]
+
+
+def test_hold_restop_escalates_public(monkeypatch):
+    monkeypatch.setenv("LENS_HOOK_RISK", "public")
+    v = Verdict.hold([{"lens": "truth", "issue": "still off"}])
+    cb = agent_sdk.make_stop_hook(evaluate=_fake(v), extract_text=lambda inp: "x")
+    out = _run(cb, {"stop_hook_active": True})
+    assert out["decision"] == "block"
+    assert "ESCALATE" in out["reason"]
+
+
 def test_unavailable_fail_open_default(monkeypatch):
     monkeypatch.delenv("LENS_HOOK_FAIL", raising=False)
     cb = agent_sdk.make_stop_hook(evaluate=_fake(Verdict.unavailable("boom")),

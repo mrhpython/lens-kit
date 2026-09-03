@@ -14,6 +14,10 @@ from lens_kit import LensGate, Profile, builtin_profile_path, lm_context
 
 from .verdict import Verdict
 
+_SAFE_RIGHTS_ISSUE = (
+    "Sensitive or restricted content was detected. Remove or redact it before finishing."
+)
+
 # LENS_HOOK_PROFILE wins; otherwise fall back to the profile shipped inside
 # lens_kit, resolved ABSOLUTELY. The old default was the relative string
 # "profiles/qwen-serve.yaml", which only resolved when the process happened
@@ -45,12 +49,18 @@ def evaluate(text: str, domain: str = "general", context: str = "") -> Verdict:
             result = _gate(text=text, domain=domain, context=context)
         r = result.to_dict()
     except Exception as e:  # noqa: BLE001 — any failure is UNAVAILABLE, never a silent pass
-        return Verdict.unavailable(f"{type(e).__name__}: {e}")
+        if isinstance(e, TimeoutError):
+            note = "validation timeout"
+        elif isinstance(e, (ConnectionError, OSError)):
+            note = "provider or validation I/O error"
+        else:
+            note = "validation runtime error"
+        return Verdict.unavailable(note)
 
     if r.get("passed") and not r.get("halted"):
         return Verdict.passed()
     violations = list(r.get("violations", []))
     if r.get("halted"):
         violations = [{"lens": "rights", "severity": "critical",
-                       "issue": r.get("halt_reason", "rights halt")}] + violations
+                       "issue": _SAFE_RIGHTS_ISSUE}]
     return Verdict.hold(violations)

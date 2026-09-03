@@ -40,12 +40,14 @@ def test_hold(monkeypatch):
 
 
 def test_rights_halt_is_hold(monkeypatch):
-    r = _Result(False, halted=True, halt_reason="PII present")
+    secret = "PII present: sensitive-test-value"
+    r = _Result(False, halted=True, halt_reason=secret)
     monkeypatch.setattr(core, "_gate", _stub_gate(r))
     monkeypatch.setattr(core, "_lm_ctx", lambda *_: _Ctx())
     monkeypatch.setattr(core, "_cap_ok", lambda: True)
     v = core.evaluate("hello")
     assert v.status == "HOLD" and v.violations[0]["lens"] == "rights"
+    assert secret not in str(v.violations)
 
 
 def test_error_is_unavailable(monkeypatch):
@@ -54,7 +56,9 @@ def test_error_is_unavailable(monkeypatch):
     monkeypatch.setattr(core, "_lm_ctx", lambda *_: _Ctx())
     monkeypatch.setattr(core, "_cap_ok", lambda: True)
     v = core.evaluate("hello")
-    assert v.status == "UNAVAILABLE" and "model down" in v.note
+    assert v.status == "UNAVAILABLE"
+    assert v.note == "validation runtime error"
+    assert "model down" not in v.note
 
 
 def test_cap_is_unavailable(monkeypatch):

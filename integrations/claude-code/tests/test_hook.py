@@ -32,6 +32,23 @@ def test_hold_after_rework_allows_with_warning():
     assert "still flagged" in out["systemMessage"]
 
 
+def test_hold_after_rework_escalates_public(monkeypatch):
+    monkeypatch.setenv("LENS_HOOK_RISK", "public")
+    v = Verdict.hold([{"lens": "truth", "issue": "no source"}])
+    out = decide(_ev(active=True), lambda t: v, "answer")
+    assert out["decision"] == "block"
+    assert "ESCALATE" in out["reason"]
+
+
+def test_rights_hold_reblocks_after_rework_without_echoing_value():
+    secret = "sensitive-test-value"
+    v = Verdict.hold([{"lens": "rights", "issue": secret}])
+    out = decide(_ev(active=True), lambda t: v, "answer")
+    assert out["decision"] == "block"
+    assert "HALT" in out["reason"]
+    assert secret not in out["reason"]
+
+
 def test_unavailable_failopen_allows_with_note(monkeypatch):
     monkeypatch.setenv("LENS_HOOK_FAIL", "open")
     out = decide(_ev(), lambda t: Verdict.unavailable("down"), "answer")
@@ -50,3 +67,11 @@ def test_unavailable_failclosed_does_not_wedge_after_rework(monkeypatch):
     monkeypatch.setenv("LENS_HOOK_FAIL", "closed")
     out = decide(_ev(active=True), lambda t: Verdict.unavailable("down"), "answer")
     assert "decision" not in out  # N=1 cap: don't block twice
+
+
+def test_unavailable_public_escalates_even_after_rework(monkeypatch):
+    monkeypatch.setenv("LENS_HOOK_RISK", "public")
+    out = decide(_ev(active=True), lambda t: Verdict.unavailable("down"), "answer")
+    assert out["decision"] == "block"
+    assert "UNKNOWN" in out["reason"]
+    assert "ESCALATE" in out["reason"]
