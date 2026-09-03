@@ -1,7 +1,6 @@
 ---
 name: lens-kit
 description: Install and run lens-kit, the outside-in 10-lens validation gate for AI-generated text. Use when asked to validate, gate, audit, or fact-check AI-generated text before it ships; check a document for hallucinated claims, contradictions, or unsupported leaps; set up an independent review gate; or measure a gate's own catch and false-positive rates on the user's data. The gate returns findings (flagged line, named check, reason), never a model-emitted score, and fails closed with UNKNOWN when a check cannot complete.
-version: "0.1.0"
 license: Apache-2.0 (see LICENSE in the repository root)
 metadata:
   homepage: "https://github.com/mrhpython/lens-kit"
@@ -59,6 +58,26 @@ lens-kit validate THE_FILE.md --profile my-profile.yaml --json
   that is a separate editing task you do yourself, after showing the findings.
 - There is no fallback provider chain: a missing key or model is a hard
   error. Do not silently switch endpoints to make a run succeed.
+
+## Improvement loop — verdict is not workflow disposition
+
+- Preserve the external candidate verdict literally. Report workflow
+  disposition separately as `SHIP`, `REVISE`, `DELIVER_WITH_WARNINGS`,
+  `ESCALATE`, or `HALT`.
+- A completed non-Rights FAIL, or PASS with actionable lens warnings, normally
+  maps to `REVISE` for at most one bounded correction by a separate producer.
+  Freeze the changed candidate, compute a new hash, and fully revalidate it.
+- After that correction, unresolved internal, reversible, low-risk work may use
+  `DELIVER_WITH_WARNINGS` with every finding preserved. Unresolved public,
+  customer-facing, high-stakes, security-sensitive, or irreversible-use work
+  uses `ESCALATE` and does not ship.
+- A valid Rights failure is the only unconditional Lens hard stop: verdict and
+  disposition are `HALT`. Runtime, transport, timeout, or incomplete-receipt
+  failure is `UNKNOWN`, never an invented PASS.
+- Deterministic consistency exit `6` is a tripwire. Declare the source/render,
+  summary/body, or customer-facing relationship before running the relevant
+  check, then inspect every firing. An inapplicable comparison or documented
+  literal false positive is a validator procedure defect, not a candidate FAIL.
 
 ## Step 3 (when asked) — measure the gate on the user's own data
 

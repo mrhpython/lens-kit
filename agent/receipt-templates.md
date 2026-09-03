@@ -2,24 +2,23 @@
 
 These are the verdict receipts a validator agent renders. A receipt is the
 record of a validation: what was checked, what the deterministic kit said, what
-the agent reasoned, and what the verdict of record is. The gate's verdict is the
-score of record; the agent's reasoning supplements it but never overrides a FAIL
-into a PASS.
+the agent reasoned, the frozen candidate's verdict, and the separate workflow
+disposition. The gate's response is preserved literally; the agent's reasoning
+supplements it and never rewrites an external FAIL into PASS.
 
 Copy a template verbatim and fill the bracketed slots. Keep the field order —
 downstream readers and any tooling depend on it.
 
 Three receipt shapes:
 
-1. **PASS / FAIL receipt** — the per-lens table plus cross-checks (the common case).
-2. **CONDITIONAL receipt** — a fixable verdict with a line-located fix, a
-   `[PROJECTION]` post-fix score, and a sized re-check.
-3. **Paired v1 + v2 verdicts** — the convention for preserving a fix cycle:
+1. **Verdict receipt** — the per-lens table, cross-checks, and disposition.
+2. **REVISE receipt** — bounded findings returned to a separate producer.
+3. **Paired v1 + v2 verdicts** — the convention for preserving a correction cycle:
    both verdicts are kept, never overwrite one with the other.
 
 ---
 
-## 1. PASS / FAIL receipt (per-lens table)
+## 1. Verdict receipt (per-lens table + disposition)
 
 The gate (`lens-kit validate <file> --profile <yaml> --json`) returns
 `passed`, `halted`, `per_lens` (a `{lens: bool}` map), `violations` (each with
@@ -28,6 +27,7 @@ The gate (`lens-kit validate <file> --profile <yaml> --json`) returns
 ```
 ## VERDICT — <artifact path>
 verdict: PASS | FAIL | HALT | UNKNOWN
+disposition: SHIP | REVISE | DELIVER_WITH_WARNINGS | ESCALATE | HALT
 domain: <domain>    artifact_type: <type>    customer-facing: yes | no
 gate: lens-kit validate (profile: <yaml>)    exit: <0|1|2>
 
@@ -49,20 +49,27 @@ violations (gate): <N>
   ...
 
 cross-checks (deterministic, no LLM):
-  consistency markers : clean | VIOLATION (<N>)   exit <0|6>
-  consistency leaks   : clean | VIOLATION (<N>)   exit <0|6>
-  consistency numbers : clean | VIOLATION (<N>)   exit <0|6>
+  consistency markers : N/A | clean | TRIPWIRE (<N>)   exit <0|6>
+    declared relation : <source -> render | N/A>
+    adjudication      : <confirmed defect | procedure defect | literal false positive | N/A>
+  consistency leaks   : N/A | clean | TRIPWIRE (<N>)   exit <0|6>
+    declared relation : <customer/public-facing files | N/A>
+    adjudication      : <confirmed defect | procedure defect | literal false positive | N/A>
+  consistency numbers : N/A | clean | TRIPWIRE (<N>)   exit <0|6>
+    declared relation : <summary -> body | N/A>
+    adjudication      : <confirmed defect | procedure defect | literal false positive | N/A>
 
 downstream consequence if wrong (ADVISORY — attention, not a score input):
   <the load-bearing claim, what it costs downstream if it is wrong, and that it
-   got the strictest reading; this never changes the verdict arithmetic>
+   got the strictest reading; this never rewrites the external verdict>
 
 agent reasoning (SUPPLEMENT — does not override the gate):
   <cross-file / arithmetic / policy notes the single-file gate cannot see>
   <each claim about a file/number is backed by a direct check, not plausibility>
 
-verdict of record: PASS | FAIL | HALT | UNKNOWN
-  <one line: the gate's verdict, plus any consistency exit-6 that forces FAIL>
+candidate verdict: PASS | FAIL | HALT | UNKNOWN
+workflow disposition: SHIP | REVISE | DELIVER_WITH_WARNINGS | ESCALATE | HALT
+  <one line preserving the external verdict and explaining the disposition>
 ```
 
 Rules for filling it:
@@ -75,26 +82,34 @@ Rules for filling it:
   derivation / missing-mechanism).
 - **`relevance` is warning-only** and needs `--context`; with no context it does
   not block.
-- **A consistency exit 6 (a dropped marker, a leak, an orphan number) forces the
-  verdict to FAIL** regardless of the gate score — no score overrides a leak.
+- **Consistency exit 6 is a literal tripwire, not an automatic verdict.** Run a
+  check only for its declared relationship and inspect every firing. A confirmed
+  defect supports FAIL/REVISE; an inapplicable comparison or documented literal
+  false positive is a validator procedure defect. Confirmed protected-data or
+  credential exposure is Rights HALT.
 - **Gate unreachable / error → verdict UNKNOWN**, never PASS.
+- **Keep verdict separate from disposition.** A completed non-Rights FAIL, or
+  PASS with actionable warnings, normally maps to REVISE for one bounded producer
+  correction. The validator never edits.
 - **The `downstream consequence if wrong` line is ADVISORY.** It records where the
   strictest reading went and what being wrong would cost; it changes attention
-  and ordering, never the verdict arithmetic. A high consequence does not turn a
+  and ordering, never the external verdict. A high consequence does not turn a
   gate PASS into a FAIL, and a low one does not rescue a FAIL.
 
 ---
 
-## 2. CONDITIONAL receipt (line-located fix + projected score + sized re-check)
+## 2. REVISE receipt (line-located finding + bounded producer correction)
 
-Use this when the verdict is fixable in one bounded round: the offense is
-located, quoted, tied to a rule, and a rewrite is proposed. The post-fix score
-is a **projection**, not a measurement — mark it `[PROJECTION]`. State the size
-of the re-check so the next pass is scoped, not a full re-run.
+Use this when a completed non-Rights FAIL, or PASS with an actionable warning,
+has bounded findings. Locate and quote the offense, tie it to a rule, and return
+it to a separate producer. The changed candidate must receive a new SHA-256 and
+a full validation; a section or partial re-check does not inherit this receipt.
 
 ```
-## VERDICT v1 — <artifact path>   (CONDITIONAL)
-verdict: CONDITIONAL — fixable in one bounded round
+## VERDICT v1 — <artifact path>
+verdict: PASS | FAIL
+disposition: REVISE — bounded producer correction permitted once
+candidate_sha256: <sha256>
 domain: <domain>    artifact_type: <type>    customer-facing: yes | no
 gate: lens-kit validate (profile: <yaml>)    exit: <1>    blocking lens: <lens>
 
@@ -102,38 +117,34 @@ offense:
   file:line   <path>:<line>
   quoted      "<the exact offending text>"
   rule        <the forward rule this breaks — from a prior catch or a lens>
-  rewrite     "<the proposed corrected text>"
+  correction  <bounded guidance; the validator must not write the replacement>
 
-projected post-fix:
-  score       [PROJECTION] ~<NN>/100   (a projection, not a measurement —
-              re-run the gate to confirm)
-  basis       <which lens clears and why, e.g. "Truth clears: the unsourced
-              stat gains a named source; no other lens was blocking">
-
-sized re-check:
-  scope       <e.g. "re-validate the one changed section; regression-grep the
-              forbidden phrase across all rendered files">
+required revalidation:
+  scope       <freeze and fully validate the changed candidate; regression-check
+              the bounded finding as additional evidence>
   command     lens-kit validate <file> --profile <yaml>
               lens-kit consistency leaks <files...> --profile <yaml>
-  cost        <e.g. "one gate call + one deterministic scan — ~30s">
+  hash        <compute a new candidate SHA-256 before dispatch>
 ```
 
-Discipline: **one bounded fix round per verdict cycle.** If the v2 re-check does
-not clear, escalate to a human — do not keep iterating.
+Discipline: **one bounded producer correction per verdict cycle.** After v2,
+unresolved internal low-risk work may be DELIVER_WITH_WARNINGS with all findings;
+unresolved public/high-risk work is ESCALATE and does not ship. Rights is HALT.
 
 ---
 
 ## 3. Paired v1 + v2 verdicts (both preserved)
 
-When a CONDITIONAL is fixed and re-checked, the second verdict is **appended**,
-not substituted. Both receipts live in the record so the fix cycle is auditable.
-v2 is a delta verdict: it states what changed, shows the regression check over
-the offending term, carries the untouched lenses forward, and gives the measured
-score (no longer a projection).
+When a producer correction is made and fully revalidated, the second verdict is **appended**,
+not substituted. Both receipts live in the record so the correction cycle is
+auditable. v2 records what changed, shows the bounded regression check, and
+contains a new full external verdict for the changed candidate.
 
 ```
-## VERDICT v2 — <artifact path>   (delta — supersedes v1's CONDITIONAL, v1 kept above)
-verdict: PASS | FAIL
+## VERDICT v2 — <artifact path>   (new candidate; v1 kept above)
+verdict: PASS | FAIL | HALT | UNKNOWN
+disposition: SHIP | DELIVER_WITH_WARNINGS | ESCALATE | HALT
+candidate_sha256: <new sha256>
 gate: lens-kit validate (profile: <yaml>)    exit: <0|1>
 
 changed since v1:
@@ -143,28 +154,26 @@ regression check:
   <e.g. "grep '<forbidden phrase>' across <N> rendered files -> 0 hits">
   <e.g. "lens-kit consistency leaks <files> --profile <yaml> -> exit 0 (clean)">
 
-carried over from v1 (not re-touched):
-  <lenses that were clean in v1 and unaffected by the fix>
-
 measured post-fix:
   verdict     <PASS | FAIL | HALT | UNKNOWN — as returned this round>
-  per_lens    <the changed lens now PASS; the rest unchanged>
+  per_lens    <all rows returned by the full v2 validation>
   violations  <count by severity, from the receipt — not estimated>
 
-verdict of record: PASS | FAIL
+candidate verdict: PASS | FAIL | HALT | UNKNOWN
+workflow disposition: SHIP | DELIVER_WITH_WARNINGS | ESCALATE | HALT
 ```
 
 Conventions:
 
-- **Never overwrite a verdict.** v1's CONDITIONAL stays in the record above v2.
+- **Never overwrite a verdict.** v1 and its REVISE disposition stay in the record above v2.
   A reader must be able to see the cycle, not just the endpoint.
-- **One lens per round.** v2 fixes the one blocking lens v1 named; it does not
-  re-open clean lenses. If a fix touches a second lens, that is a new cycle.
-- **The measured verdict replaces the projection.** v1 may carry a
-  `[PROJECTION]`; v2 carries only what the gate actually returned this round.
-  Do not invent a numeric score: the gate returns a verdict, a per-lens map and
-  violations — it does not emit a 0-100 score, so writing one down would be the
-  exact fabrication this kit exists to catch.
-- **If v2 does not clear, stop and escalate.** The paired record then reads
-  v1 CONDITIONAL → v2 still-failing → handed to a human; that is a complete,
-  honest record, not a failure to finish.
+- **Full validation is required.** The correction may be bounded, but v2 runs
+  the complete gate over the exact changed candidate; clean v1 lenses are not
+  assumed to carry over.
+- **The v2 verdict is measured.** Do not invent a numeric score: the gate returns
+  a verdict, a per-lens map, and violations. If the runtime emits no numeric
+  score, report `score: unavailable`.
+- **If v2 does not clear, use risk-sensitive disposition.** Internal reversible
+  low-risk work may be DELIVER_WITH_WARNINGS; public, customer-facing,
+  high-stakes, security-sensitive, or irreversible-use work is ESCALATE and does
+  not ship. Rights is always HALT.

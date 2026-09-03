@@ -146,14 +146,15 @@ Before rendering, name what happens if the load-bearing claim is wrong:
   caught as a dropped `[UNVERIFIED]`. The highest-consequence claim got the
   strictest reading; nothing changed the verdict arithmetic.
 
-This step changed nothing about the score — the gate FAIL stands on its own
-arithmetic. It confirmed the scrutiny landed where being wrong costs the most.
+This step changed nothing about the external verdict — the gate FAIL stands on
+its own. It confirmed the scrutiny landed where being wrong costs the most.
 
 ## Step 6 — verdict receipt
 
 ```
 ## VERDICT — <work>/landing.md
 verdict: FAIL
+disposition: REVISE
 domain: marketing    artifact_type: landing-copy    customer-facing: yes
 gate: lens-kit validate (profile: agency-example.yaml)    exit: 1
 
@@ -173,8 +174,11 @@ gate: lens-kit validate (profile: agency-example.yaml)    exit: 1
 violations (gate): 4 (2 high, 2 warning)
 
 cross-checks (deterministic, no LLM):
-  consistency markers : VIOLATION (1)   exit 6
+  consistency markers : TRIPWIRE (1)    exit 6
+    declared relation : source.md -> landing.md render
+    adjudication      : confirmed dropped evidence marker
   consistency leaks   : clean           exit 0
+    declared relation : landing.md is customer-facing
 
 downstream consequence if wrong (ADVISORY — attention, not a score input):
   Load-bearing claim "sign-off in under 3 days" — if wrong, a buyer signs a
@@ -188,9 +192,10 @@ agent reasoning (SUPPLEMENT — does not override the gate):
   marker and the claim became a flat customer-facing assertion. Verified by
   reading both files directly, not by inference.
 
-verdict of record: FAIL
-  Gate exit 1 (Truth + Causality high). Consistency markers exit 6 independently
-  forces FAIL — a dropped marker is a violation no score overrides.
+candidate verdict: FAIL
+workflow disposition: REVISE
+  Gate exit 1 (Truth + Causality high). The markers tripwire independently
+  confirms the same dropped-marker defect for the declared source/render pair.
 ```
 
 ## Step 7 — append the new catch

@@ -3,11 +3,13 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lens_kit"
+name = "lens-kit"
 version = "0.1.0"
 description = "Trainable 10-lens validation gate for AI-generated text (DSPy). Provider-agnostic: bring any litellm-compatible endpoint."
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [{ name = "Soulfield" }]
+keywords = ["ai", "evaluation", "validation", "dspy", "llm"]
 # Licence: Apache-2.0. The grant lives in the root LICENSE file; NOTICE carries the
 # third-party attribution for src/lens_kit/review/. The trove classifier is used rather
 # than a PEP 639 `license = "Apache-2.0"` expression because the SPDX string is only
@@ -21,6 +23,8 @@ requires-python = ">=3.10"
 # setuptools' default license_files glob picks up LICENSE and NOTICE on both versions.
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
     # NOTE: dspy pins gepa transitively (dspy 3.2.x -> gepa 0.0.27).
@@ -34,6 +38,12 @@ dev = ["pytest>=8"]
 
 [project.scripts]
 lens-kit = "lens_kit.cli:entry"
+
+[project.urls]
+Homepage = "https://soulfield.one"
+Repository = "https://github.com/mrhpython/lens-kit"
+Issues = "https://github.com/mrhpython/lens-kit/issues"
+Changelog = "https://github.com/mrhpython/lens-kit/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -56,10 +66,11 @@ lens_kit = ["profiles/*.yaml", "catches_seed.jsonl"]
 # Do NOT add --import-mode=importlib here: tests/ use `from conftest import
 # make_stub_gate`, which needs the default prepend mode to resolve.
 #
-# LIMITATION — this does NOT cover integrations/. That suite (33 tests) needs
-# the integration installed alongside this package; it depends on lens_kit and
-# is not installable on its own:
+# LIMITATION — this does NOT cover integrations/. Those suites need lens_kit
+# installed alongside the adapter:
 #     pip install -e ".[dev]" && pip install -e integrations/claude-code
 #     python -m pytest integrations/claude-code
-# This repo has no CI, so nothing runs either suite automatically.
+#     PYTHONPATH=integrations/codex python -m pytest integrations/codex/tests
+# GitHub CI runs each integration suite in a separate matrix job so their
+# same-named test modules never collide during collection.
 testpaths = ["tests"]

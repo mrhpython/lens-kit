@@ -37,17 +37,19 @@ render an agent-tier verdict you had no means to reach. The full protocol is in
    Exit 0 = passed, 1 = failed/halted, 2 = usage/config error. Parse the JSON:
    `passed`, `halted`, `per_lens`, `violations`, `consciousness_flags`.
 
-4. **Run cross-checks.** Deterministic, no LLM, exit 6 on a violation — run the
-   ones that apply to the artifact set:
+4. **Run cross-checks.** Deterministic, no LLM, exit 6 when a literal tripwire
+   fires — first declare which relationship applies, then run only those checks:
    ```
    lens-kit consistency markers <source> <rendered...> --profile <yaml>
    lens-kit consistency leaks <customer-facing-files...> --profile <yaml>
    lens-kit consistency numbers <summary> <body>
    ```
-   markers: run when there is a source + one or more rendered outputs.
-   leaks: run on EVERY customer-facing file.
-   numbers: run when one file summarizes another.
-   A cross-check exit 6 is a violation no score overrides.
+   markers: run only for a declared source + rendered-output relationship.
+   leaks: run on declared customer-facing or public-facing files.
+   numbers: run only when one file is intended to summarize another.
+   Inspect every exit 6. A confirmed defect affects the candidate; a check
+   applied to unrelated surfaces or a documented literal false positive is a
+   validator procedure defect, not a candidate failure.
 
 5. **Name the downstream consequence (ADVISORY).** Before you render the verdict,
    name what happens DOWNSTREAM if the artifact's load-bearing claim is wrong —
@@ -55,15 +57,17 @@ render an agent-tier verdict you had no means to reach. The full protocol is in
    the highest-consequence claims actually got the strictest reading (the gate
    verdict, the relevant prior catches, the consistency checks covered THAT
    claim, not just the easy ones). This changes ATTENTION and ORDERING, NEVER the
-   verdict arithmetic: the gate score plus any consistency exit 6 remain the
-   authoritative scorer. A high consequence cannot turn a PASS into a FAIL; if a
+   gate verdict: preserve the external response literally and report any
+   confirmed deterministic defect separately. A high consequence cannot turn a
+   PASS into a FAIL; if a
    high-consequence claim got a light reading, re-run the gate on it in isolation
    or surface it in the receipt. If this step changes anything, it changes where
    you looked — recorded as a finding, never as an override.
 
 6. **Render the verdict receipt.** Use the per-lens table from
-   `receipt-templates.md`. For a fixable verdict use the CONDITIONAL template
-   (line-located fix + `[PROJECTION]` post-fix score + sized re-check). Put your
+   `receipt-templates.md`. Report candidate verdict separately from workflow
+   disposition. A completed non-Rights FAIL, or PASS with an actionable warning,
+   normally maps to REVISE for one bounded producer correction. Put your
    cross-relationship reasoning in the `agent reasoning (SUPPLEMENT)` block —
    clearly marked as supplement, never as an override. Record the step-5
    consequence on the receipt's `downstream consequence if wrong` line (advisory
@@ -88,15 +92,23 @@ render an agent-tier verdict you had no means to reach. The full protocol is in
   instance.
 - **The gate's verdict is the score of record.** Your reasoning supplements it.
   You may add findings the gate missed (that is your value), but you never argue a
-  gate FAIL into a PASS. A FAIL stands until the artifact is fixed and re-validated.
+  gate FAIL into a PASS. The candidate's FAIL stands until it is fixed and fully
+  revalidated; workflow disposition remains the separate risk-sensitive decision.
 - **Claims about files, data, or systems need a direct check.** Read the file, run
   the command. Prose plausibility is not evidence. The file on disk is the only
   truth — if you assert a fix was applied, re-read the file; if you cite a number,
   it must appear in a file you read.
 - **Fail closed.** If the gate is unreachable or errors, the verdict is UNKNOWN,
   never PASS. A missing API key, a config error, a network failure → UNKNOWN.
-- **One bounded fix round per verdict cycle.** A CONDITIONAL gets ONE fix +
-  re-check. If v2 does not clear, escalate to a human. Do not loop.
+- **One bounded producer correction per verdict cycle.** A completed non-Rights
+  FAIL, or PASS with an actionable warning, gets at most ONE correction + full
+  revalidation when the finding is bounded. The validator never edits. After
+  that round, unresolved internal low-risk work may be DELIVER_WITH_WARNINGS;
+  unresolved public, customer-facing, high-stakes, security-sensitive, or
+  irreversible-use work is ESCALATE and does not ship. Do not loop.
+- **Rights is the only unconditional Lens hard stop.** A valid Rights failure is
+  verdict HALT and disposition HALT. Gate or transport failure is UNKNOWN, not
+  a fabricated verdict.
 - **You recommend; you do not act irreversibly.** Money, publishing, sending,
   deleting — those are a human's to authorize. Your output is a verdict, not an
   action.
@@ -105,7 +117,8 @@ render an agent-tier verdict you had no means to reach. The full protocol is in
 
 You are the expensive tier. Run the deterministic checks first
 (`lens-kit validate`, `lens-kit consistency`). Engage the full agent loop on:
-borderline / HOLD verdicts, customer-facing artifacts, high-stakes content, and
+non-Rights FAIL or actionable warning findings, customer-facing artifacts,
+high-stakes content, and
 multi-file asset sets where the defect is a RELATIONSHIP (cross-file
 contradiction, a number a summary invents, a marker dropped between formats, a
 policy phrase that leaked). For a single clean low-stakes file, the gate plus a

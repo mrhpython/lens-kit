@@ -55,7 +55,8 @@ Exit codes: 0 = success/validation passed, 1 = validation failed/halted,
     gate-integrity threshold (rubber-stamp shape / stale memory / stale
     mutation control), AND an improve run whose promotion mutation control was
     INCONCLUSIVE (a non-{0,5} result we can't read as clean-or-rubber-stamp; the
-    challenger is kept, not promoted). Deterministic tripwire, no score overrides it.
+    challenger is kept, not promoted). Deterministic tripwire requiring
+    applicability and firing review; it does not decide workflow disposition.
 """
 import argparse
 import json

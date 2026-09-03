@@ -252,7 +252,7 @@ than inventing the text.
 | `3` | costing-gate hard stop — **compile only**, "this run costs too much" |
 | `4` | pace kill — live pace blew the approved projection |
 | `5` | the gate failed to catch planted flaws: calibration battery failures (`calibrate run`) OR a missed/rubber-stamped mutant (`mutate`, `eval --mutation-control`) |
-| `6` | consistency violation (`consistency`) — a dropped marker, a forbidden-string leak, or an orphan summary number. Deterministic; no score overrides it |
+| `6` | consistency tripwire (`consistency`) — a possible dropped marker, forbidden-string leak, or orphan summary number. Deterministic; inspect applicability and every firing |
 
 `3` is reserved for the compile costing-gate stop alone so a wrapper script can
 tell "too expensive to run" apart from "ran, but the gate is weak" (`5`).
@@ -334,8 +334,9 @@ lens-kit consistency all --config checks.yaml --profile my-profile.yaml
 - **leaks** — internal vocabulary leaking into customer-facing copy:
   internal lens/scoring names and counts, cost or margin data, any phrase
   you list in `consistency.deny` (case-insensitive, literal — no regex).
-  **One hit is a violation no score overrides** — a leak is a defect by
-  itself, however good the copy reads.
+  One hit is a tripwire requiring review. Confirm that the file is actually
+  customer/public-facing and that the literal is prohibited in this context;
+  confirmed protected-data exposure is a Rights HALT.
 - **numbers** — numbers a summary asserts that are absent from the body it
   summarizes (the exec-summary-vs-detail mismatch).
 
@@ -473,7 +474,8 @@ agent's entire toolbelt — no graph, no service. The 7-step loop, on real comma
 4. **run cross-checks** — `lens-kit consistency markers|leaks|numbers`
 5. **name the downstream consequence** (advisory — what it costs if the
    load-bearing claim is wrong; changes attention, never the verdict arithmetic)
-6. **render the verdict receipt** (per-lens table / CONDITIONAL / paired v1+v2)
+6. **render the verdict receipt** (candidate verdict + separate disposition /
+   paired v1+v2)
 7. **append new catches** — `lens-kit catches add ...` (routine passes excluded)
 
 **Honest framing of what the agent is.** The agent layer's value traces to a real
@@ -485,7 +487,10 @@ sending, deleting). The boundary rules are load-bearing, not advisory: never val
 output you generated (a generator grading itself is circular); your reasoning
 supplements the gate and never overrides a FAIL into a PASS; a claim about a file or
 number needs a direct check, not prose plausibility; on a gate error the verdict is
-UNKNOWN, never PASS; one bounded fix round per cycle, then escalate to a human. A
+UNKNOWN, never PASS. A completed non-Rights FAIL, or PASS with actionable warnings,
+gets at most one bounded producer correction and full revalidation. After that,
+unresolved internal low-risk work may be delivered with explicit warnings;
+unresolved public/high-risk work is escalated and does not ship. Rights is HALT. A
 clean acceptance walkthrough of the full loop is in
 [`docs/VALIDATOR-AGENT-walkthrough.md`](VALIDATOR-AGENT-walkthrough.md).
 

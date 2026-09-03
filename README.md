@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-007ec6" alt="License: Apache-2.0"></a>
+  <a href="https://github.com/mrhpython/lens-kit/actions/workflows/ci.yml"><img src="https://github.com/mrhpython/lens-kit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/tests-515%20passing-2da44e" alt="Tests: 515 passing (local, no-network suite)">
   <img src="https://img.shields.io/badge/python-3.10%2B-007ec6" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/gate-fail--closed-d29922" alt="Gate: fail-closed">
@@ -50,7 +51,8 @@ fails closed.
 ## Quickstart
 
 ```bash
-pip install -e .
+python -m pip install \
+  "lens-kit @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0"
 
 # 1. No credentials, no network — the deterministic parts of the kit:
 lens-kit calibrate generate --profile src/lens_kit/profiles/agency-example.yaml --out battery/
@@ -62,6 +64,35 @@ cp src/lens_kit/profiles/agency-example.yaml my-profile.yaml
 echo 'Our Q3 revenue grew 40% year-over-year and will keep growing.' > report.md
 lens-kit validate report.md --profile my-profile.yaml --json
 ```
+
+## Install for your coding agent
+
+Install the core once, then the adapter for the agent you use. These commands
+are pinned to the GitHub release tag and do not require PyPI.
+
+```bash
+# Core (required by every adapter)
+python -m pip install \
+  "lens-kit @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0"
+
+# Codex
+python -m pip install \
+  "lens-codex-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/codex"
+
+# Claude Code
+python -m pip install \
+  "lens-stop-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/claude-code"
+
+# Grok
+python -m pip install \
+  "lens-grok-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/grok"
+```
+
+The GitHub Release also carries wheels and source archives for the core and all
+three adapters, plus `SHA256SUMS`. Configuration remains agent-specific:
+[Codex](integrations/codex/README.md) ·
+[Claude Code / Agent SDK](integrations/claude-code/README.md) ·
+[Grok](integrations/grok/README.md).
 
 <img src="docs/assets/demo.svg" alt="Terminal session: the no-credential quickstart — calibrate generate writes 24 fixtures, catches add seeds the memory, scrub redacts an API key and exits 6." width="100%">
 
@@ -122,7 +153,7 @@ one agent — map, desk, numbered stages — with this gate wired in as its veri
 | **Consistency checks** (`consistency`) | Cross-artifact tripwires, pure Python: marker parity, leak scan, number parity | [Consistency checks](docs/REFERENCE.md#consistency-checks-deterministic-no-llm) |
 | **PII pre-pass** (`scrub`) | Deterministic secret/PII halt BEFORE any provider call — the secret never leaves your process | [PII pre-pass](docs/REFERENCE.md#pii-pre-pass--lens-0-deterministic-no-llm) |
 | **Catches memory** (`catches`) | Institutional memory of named defects; recurring patterns get promoted to deterministic checks | [Catches](docs/REFERENCE.md#catches--the-institutional-memory-loop-no-llm) |
-| **Stop-hook gate** (`lens-stop-hook`) | Gates a coding agent's finished answer: Claude Code Stop hook + Claude Agent SDK. On HOLD it blocks the turn and hands the violations back as revision guidance, capped at one rework. The validator is a separate model — the agent never grades itself. | [Claude Code integration](integrations/claude-code/README.md) |
+| **Stop-hook gates** | Gates a coding agent's finished answer. A non-Rights FAIL returns findings for one correction; unresolved internal low-risk output can be delivered with warnings, while public/high-risk output escalates. Rights HALT remains blocked. The validator is a separate model — the agent never grades itself. | [Codex](integrations/codex/README.md) · [Claude Code and Claude Agent SDK](integrations/claude-code/README.md) |
 | **Validator agent** | Model-agnostic protocol for the cross-relationship tier above the gate | [The validator agent](docs/REFERENCE.md#the-validator-agent--the-cross-relationship-tier) |
 
 Exit codes are load-bearing (`3` = too expensive to run, `5` = the gate missed

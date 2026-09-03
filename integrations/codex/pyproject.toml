@@ -3,9 +3,9 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lens-grok-hook"
+name = "lens-codex-hook"
 version = "0.1.0"
-description = "Grok Stop hook for the lens-kit outside-in validation gate"
+description = "Codex Stop hook for the lens-kit outside-in validation gate"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -13,11 +13,11 @@ license-files = ["LICENSE"]
 dependencies = ["lens-kit==0.1.0"]
 
 [project.scripts]
-lens-grok-stop-hook = "lens_grok_hook.hook:main"
+lens-codex-stop-hook = "lens_codex_hook.hook:main"
 
 [project.urls]
 Repository = "https://github.com/mrhpython/lens-kit"
-Documentation = "https://github.com/mrhpython/lens-kit/tree/main/integrations/grok"
+Documentation = "https://github.com/mrhpython/lens-kit/tree/main/integrations/codex"
 
 [tool.setuptools.packages.find]
-include = ["lens_grok_hook*"]
+include = ["lens_codex_hook*"]

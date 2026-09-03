@@ -1,0 +1,62 @@
+name: GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Publish GitHub Release
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-distributions
+          path: dist/release
+      - name: Verify tag matches every package
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import tomllib
+
+          expected = os.environ["RELEASE_TAG"].removeprefix("v")
+          projects = [
+              pathlib.Path("pyproject.toml"),
+              pathlib.Path("integrations/claude-code/pyproject.toml"),
+              pathlib.Path("integrations/codex/pyproject.toml"),
+              pathlib.Path("integrations/grok/pyproject.toml"),
+          ]
+          mismatches = []
+          for project in projects:
+              version = tomllib.loads(project.read_text())["project"]["version"]
+              if version != expected:
+                  mismatches.append(f"{project}: {version} != {expected}")
+          if mismatches:
+              raise SystemExit("\n".join(mismatches))
+          PY
+      - name: Create release and upload distributions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/release/* \
+            --verify-tag \
+            --generate-notes \
+            --notes-file RELEASE_NOTES.md \
+            --title "lens-kit $RELEASE_TAG"

@@ -7,12 +7,18 @@ the generator does not grade itself.
 
 ## Install
 
-From the repository root, in the same virtual environment:
+Release install, pinned to the same tag as the core:
 
 ```bash
-pip install -e .
-pip install -e integrations/grok
+python -m pip install \
+  "lens-kit @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0"
+python -m pip install \
+  "lens-grok-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/grok"
 ```
+
+For a development checkout, replace those commands with
+`pip install -e .` and `pip install -e integrations/grok` from the repository
+root.
 
 This installs `lens-grok-stop-hook`.
 

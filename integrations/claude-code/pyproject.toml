@@ -1,15 +1,26 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "lens-stop-hook"
 version = "0.1.0"
 description = "Claude Code Stop hook that gates output through the Qwen outside-in lens"
+readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["lens_kit"]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = ["lens-kit==0.1.0"]
 
 [project.optional-dependencies]
 agent-sdk = ["claude-agent-sdk>=0.2"]
 
 [project.scripts]
 lens-stop-hook = "lens_stop_hook.hook:main"
+
+[project.urls]
+Repository = "https://github.com/mrhpython/lens-kit"
+Documentation = "https://github.com/mrhpython/lens-kit/tree/main/integrations/claude-code"
 
 [tool.setuptools.packages.find]
 include = ["lens_stop_hook*"]

@@ -7,10 +7,18 @@ grades itself.
 
 ## Install
 
+Release install, pinned to the same tag as the core:
+
 ```bash
-pip install -e .                      # the lens_kit engine, from the repo root
-pip install -e integrations/claude-code
+python -m pip install \
+  "lens-kit @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0"
+python -m pip install \
+  "lens-stop-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/claude-code"
 ```
+
+For a development checkout, replace those commands with
+`pip install -e .` and `pip install -e integrations/claude-code` from the
+repository root.
 
 This installs a `lens-stop-hook` console script, which is what the settings
 snippet calls.
@@ -59,8 +67,11 @@ Customers building agents on `claude-agent-sdk` can add the same outside-in lens
 gate to their agent's final answer:
 
 ```bash
-pip install lens-stop-hook[agent-sdk]
+python -m pip install "claude-agent-sdk>=0.2"
 ```
+
+Install the tagged adapter above first. The GitHub release wheel exposes the
+same `agent-sdk` optional extra.
 
 ```python
 from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, query

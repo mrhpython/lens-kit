@@ -1,0 +1,4 @@
+interface:
+  display_name: "lens-kit Validator"
+  short_description: "Run outside-in validation before AI text ships"
+  default_prompt: "Use $lens-kit to validate this finished AI-generated text and report every finding or UNKNOWN."

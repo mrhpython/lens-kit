@@ -51,19 +51,24 @@ Before running the loop, these must be true (verify them, do not assume):
 
 On a step failure the loop does NOT silently proceed:
 
-- **gate error / unreachable (step 3)** → the verdict is UNKNOWN, the loop stops,
-  and the artifact is escalated to a human. Never assume PASS.
-- **a CONDITIONAL that does not clear on its one re-check (step 6)** → escalate to
-  a human; do not iterate further.
-- **a `consistency` exit 6 (step 4)** → the verdict is FAIL regardless of the gate
-  score; no score overrides it.
+- **gate error / unreachable (step 3)** → the verdict is UNKNOWN. Never assume
+  PASS. Internal low-risk output may be delivered only as explicitly unvalidated;
+  public/high-risk output is ESCALATE and does not ship.
+- **a completed non-Rights FAIL, or PASS with an actionable warning (step 6)** →
+  disposition REVISE for at most one bounded producer correction, followed by a
+  full revalidation of the changed candidate.
+- **a `consistency` exit 6 (step 4)** → inspect the tripwire. A confirmed defect
+  affects the candidate; an inapplicable comparison or documented literal false
+  positive is a validator procedure defect, not a candidate failure.
+- **a valid Rights failure** → verdict HALT and disposition HALT immediately.
 - **a catches add rejected (step 7)** → the entry named no defect (a routine
   pass); record the real defect or record nothing. This is a doctrine stop, not
   an error to route around.
 
-The "rollback" for a validation is simple: a verdict is a recommendation, never an
-irreversible act, so an UNKNOWN or a FAIL costs nothing but a human decision — the
-artifact is not shipped, sent, or published on the agent's say-so.
+The candidate verdict and workflow disposition are different fields. The verdict
+describes the frozen candidate. The disposition is one of SHIP, REVISE,
+DELIVER_WITH_WARNINGS, ESCALATE, or HALT. The validator recommends and never takes
+an irreversible action.
 
 ---
 
@@ -127,8 +132,9 @@ it does not override it.
 
 ### 4. Run cross-checks (deterministic, no LLM)
 
-Run the `consistency` checks that apply to the artifact set. Each is pure Python,
-no model call, and exits `6` on a violation that **no score overrides**:
+Run only the `consistency` checks whose relationship applies to the artifact set.
+Each is pure Python, makes no model call, and exits `6` when a literal tripwire
+fires:
 
 ```bash
 # markers — every evidence marker in the source must survive into each render:
@@ -145,23 +151,26 @@ When to run each:
 
 | check | run it when |
 |---|---|
-| markers | there is a source artifact + one or more rendered outputs |
-| leaks | ANY file is customer-facing (run on every such file) |
-| numbers | one file summarizes another (exec summary vs detail) |
+| markers | there is a declared source artifact + one or more rendered outputs |
+| leaks | a file is declared customer-facing or public-facing |
+| numbers | one file is intended to summarize another (exec summary vs detail) |
 
 **Tripwire, not oracle.** These are literal and deterministic; none understands
 meaning. `markers` flags a render that legitimately covers a subset of the source
 (a false positive by design); `numbers` does no derived math ("13 of 17" will not
 reconcile to "76%"). A firing means "look here", a clean run means "no tripwire
-fired" — not "proven consistent". That adjudication is the agent's job in step 6.
+fired" — not "proven consistent". Inspect every firing. A confirmed defect is a
+candidate finding; a check applied to unrelated surfaces or a documented literal
+false positive is a validator procedure defect. That adjudication is the agent's
+job in step 6.
 
 ### 5. Name the downstream consequence (ADVISORY — attention, not arithmetic)
 
 Before you render the verdict, name what happens DOWNSTREAM if the artifact's
 load-bearing claim is wrong, and confirm the highest-consequence claims got the
 strictest reading. This step changes ATTENTION and ORDERING; it NEVER changes the
-verdict arithmetic — the gate score (step 3) plus any `consistency` exit 6 (step
-4) remain the authoritative scorer. A high consequence cannot turn a gate PASS
+gate verdict — preserve the external response literally and report any confirmed
+deterministic defect separately. A high consequence cannot turn a gate PASS
 into a FAIL, and a low consequence cannot rescue a gate FAIL.
 
 Do three things:
@@ -186,23 +195,37 @@ override of the gate's number.
 ### 6. Render the verdict receipt
 
 Render the per-lens table from
-[`../agent/receipt-templates.md`](../agent/receipt-templates.md). Three shapes:
+[`../agent/receipt-templates.md`](../agent/receipt-templates.md). Keep candidate
+verdict separate from workflow disposition. The common mappings are:
+
+- PASS with no actionable finding → SHIP;
+- completed non-Rights FAIL, or PASS with an actionable warning → REVISE for the
+  first bounded producer correction;
+- unresolved internal low-risk work after that correction →
+  DELIVER_WITH_WARNINGS, preserving every finding;
+- unresolved public, customer-facing, high-stakes, security-sensitive, or
+  irreversible-use work after that correction → ESCALATE; do not ship;
+- valid Rights failure → HALT;
+- UNKNOWN → never PASS; explicit unvalidated warning for internal low-risk work,
+  ESCALATE for public/high-risk work.
+
+The receipt has three shapes:
 
 - **PASS / FAIL** — the per-lens table plus the cross-check results.
-- **CONDITIONAL** — a fixable verdict: quote the offense, give `file:line`, name
-  the rule it breaks, propose the rewrite, give a **`[PROJECTION]`** post-fix
-  score (a projection, never a measurement), and size the re-check.
-- **Paired v1 + v2** — when a CONDITIONAL is fixed, append v2 (a delta verdict
-  with the regression check and the MEASURED score); keep v1. Never overwrite a
-  verdict.
+- **REVISE** — a fixable finding: quote the offense, give `file:line`, name the
+  rule it breaks, and size the correction and full revalidation.
+- **Paired v1 + v2** — when a producer correction is made, append v2 with the
+  new candidate hash, regression check, and measured external verdict; keep v1.
+  Never overwrite a verdict.
 
 Put the cross-relationship reasoning — the cross-file, arithmetic, and policy
 findings the single-file gate could not see — in the receipt's
 `agent reasoning (SUPPLEMENT)` block, clearly marked as supplement. Record the
 step-5 consequence on the receipt's `downstream consequence if wrong` line (the
 load-bearing claim, what it costs if wrong, and that it got the strictest
-reading) — it is advisory context, not a score input. A consistency exit `6`
-forces the verdict to FAIL regardless of the gate score.
+reading) — it is advisory context, not a score input. Record each consistency
+tripwire, its declared relationship, and its adjudication separately from the
+external gate verdict.
 
 ### 7. Append new catches
 
@@ -252,9 +275,14 @@ learned the expensive way; treat them as load-bearing, not advisory.
   key, a config error, a network failure, a non-zero exit you did not expect —
   all fail closed to UNKNOWN. A green verdict is a positive claim; never make it
   by default.
-- **One bounded fix round per verdict cycle, then escalate.** A CONDITIONAL gets
-  ONE fix + re-check (the v2 verdict). If v2 does not clear, hand it to a human.
-  Do not iterate the agent against the gate indefinitely.
+- **One bounded producer correction per verdict cycle.** A completed non-Rights
+  FAIL, or PASS with an actionable warning, gets at most ONE correction and full
+  revalidation when bounded. The validator never edits. After that, unresolved
+  internal low-risk work may be DELIVER_WITH_WARNINGS; unresolved public,
+  customer-facing, high-stakes, security-sensitive, or irreversible-use work is
+  ESCALATE and does not ship. Do not iterate indefinitely.
+- **Rights is the only unconditional Lens hard stop.** A valid Rights failure is
+  HALT. Runtime, transport, or incomplete-receipt failure is UNKNOWN.
 - **You recommend; the verdict of record is the gate's, and a human owns
   irreversible action.** Money, publishing, sending, deleting are a human's to
   authorize. The agent's output is a verdict and a recommendation, never an act.
@@ -267,8 +295,9 @@ The agent is the expensive tier. Run the deterministic checks FIRST — the gate
 (`lens-kit validate`) and the cross-checks (`lens-kit consistency`) — and reach
 for the agent loop only on:
 
-- **borderline / HOLD verdicts** — where the gate is uncertain or a tripwire
-  fired and the question is now "is this a real defect or a known false positive?"
+- **non-Rights FAIL or actionable warning findings** — where the bounded
+  correction loop can improve the candidate, or a tripwire fired and the
+  question is now "is this a real defect or a known false positive?"
 - **customer-facing artifacts** — where the cost of a missed leak or fabrication
   is high.
 - **high-stakes content** — anything money-adjacent, published, or sent.

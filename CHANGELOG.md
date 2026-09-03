@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0 — 2026-09-03 — First packaged GitHub release
+
+The first GitHub Release ships eight artifacts: wheel and source archives for
+the `lens-kit` core plus installable Codex, Claude Code / Agent SDK, and Grok
+stop-hook adapters. GitHub CI runs the core and each adapter suite separately,
+then builds, checks and clean-installs the release artifacts. A `v0.1.0` tag
+creates the GitHub Release only after those jobs pass and publishes a
+`SHA256SUMS` manifest alongside the packages.
+
+The Codex adapter keeps candidate verdict separate from workflow disposition:
+one bounded correction for non-Rights findings, risk-sensitive escalation for
+unresolved public or high-risk work, and unconditional HALT for Rights.
+
 ## 2026-08-29 — Stop-hook gate published (Claude Code + Agent SDK)
 
 `integrations/claude-code/` ships the outside-in gate as a Claude Code **Stop
