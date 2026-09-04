@@ -62,8 +62,16 @@ echo 'Our Q3 revenue grew 40% year-over-year and will keep growing.' > report.md
 lens-kit calibrate generate --profile my-profile.yaml --out battery/
 lens-kit catches add --seed          # seeds the institutional-memory loop
 lens-kit scrub report.md             # deterministic PII pre-pass (exit 6 on a finding)
+```
 
-# 2. The actual gate. ONE model endpoint — any litellm target:
+Before running the live gate, edit `my-profile.yaml`: replace the intentional
+`REPLACE_ME` model with one litellm-compatible endpoint, set `api_base` when
+needed, and set `api_key_env` to the **name** of the environment variable that
+contains your provider key. Never put the key itself in the profile. The
+packaged placeholder deliberately exits without calling a provider.
+
+```bash
+# 2. After configuring my-profile.yaml, run the actual gate:
 lens-kit validate report.md --profile my-profile.yaml --json
 ```
 
