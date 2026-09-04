@@ -5,7 +5,6 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-007ec6" alt="License: Apache-2.0"></a>
   <a href="https://github.com/mrhpython/lens-kit/actions/workflows/ci.yml"><img src="https://github.com/mrhpython/lens-kit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-515%20passing-2da44e" alt="Tests: 515 passing (local, no-network suite)">
   <img src="https://img.shields.io/badge/python-3.10%2B-007ec6" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/gate-fail--closed-d29922" alt="Gate: fail-closed">
 </p>
@@ -56,7 +55,7 @@ python -m pip install \
 
 # Copy the packaged example profile into the current directory:
 python -c 'from importlib.resources import files; from pathlib import Path; Path("my-profile.yaml").write_text(files("lens_kit").joinpath("profiles/agency-example.yaml").read_text())'
-echo 'Our Q3 revenue grew 40% year-over-year and will keep growing.' > report.md
+echo '[FICTIONAL TEST INPUT] ExampleCo reports 40% year-over-year revenue growth.' > report.md
 
 # 1. No credentials, no network — the deterministic parts of the kit:
 lens-kit calibrate generate --profile my-profile.yaml --out battery/

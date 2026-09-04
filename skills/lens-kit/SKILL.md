@@ -28,9 +28,17 @@ python3 -m venv .venv && .venv/bin/pip install -e .
 Run these first; they are deterministic and free:
 
 ```bash
-lens-kit calibrate generate          # writes a 16-fixture planted-flaw calibration battery
-lens-kit catches add --seed          # seeds the institutional-memory loop
-lens-kit consistency markers         # deterministic marker/leak scan
+lens-kit calibrate generate \
+  --profile src/lens_kit/profiles/agency-example.yaml \
+  --out battery/                     # writes 24 fixtures with the default 3 per class
+lens-kit catches add --seed           # seeds the institutional-memory loop
+```
+
+Marker consistency needs an authoritative source and one or more rendered
+derivatives. When that relationship exists, pass the real paths explicitly:
+
+```bash
+lens-kit consistency markers SOURCE_ARTIFACT RENDERED_ARTIFACT
 ```
 
 ## Step 2 — run the gate on a real file

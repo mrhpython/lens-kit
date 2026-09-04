@@ -30,6 +30,7 @@ snippet calls.
 | `LENS_HOOK_PROFILE` | the profile shipped in `lens_kit` | Absolute path to your own profile. Unset is fine — it resolves to the packaged example, which you should replace with your domain vocabulary and your endpoint. |
 | `LENS_HOOK_FAIL` | `open` | `open` = deliver + "not validated" note on lens failure; `closed` = block |
 | `LENS_HOOK_RISK` | `internal-low` | Only `internal-low` permits delivery with warnings after one correction. Set `public`, `customer-facing`, `high-stakes`, `security-sensitive`, or `irreversible` to block unresolved FAIL and UNKNOWN output with `ESCALATE`. Unknown values also escalate. |
+| `LENS_HOOK_DAILY_CAP` | `200` | Maximum gate calls per long-lived adapter process per calendar day. Reaching the cap returns `UNAVAILABLE`; the fail and risk policies above decide whether output may finish. |
 | *your provider's key env* | — | Whatever `llm.api_key_env` in your profile names (e.g. `DEEPINFRA_API_KEY`, `OPENAI_API_KEY`). Missing it fails closed at load. |
 
 Put these in your shell env or the `settings.json` hook `env`.
