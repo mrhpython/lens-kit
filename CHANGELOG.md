@@ -44,7 +44,8 @@ own provider before trusting a smaller number.
 
 The test harness also assumed a directory that exists only in our working repo,
 which errored every test at import in a clean checkout. It now falls back to the
-packaged profile. 33 tests pass against this repo with no credentials.
+packaged profile, so the no-credential adapter suite can run from a clean
+checkout.
 
 ## 2026-08-10 — Structure lens: runs unconditionally; scoped precondition/rollback filter
 
@@ -59,10 +60,11 @@ request, and the predicate no longer gates dispatch. Second,
 contained both a precondition keyword and a rollback keyword — deleting
 every structure finding, related or not. It now drops only violations whose
 issue text is about those topics, and a regression test pins the scoped
-behaviour. Cost note: one additional LLM call per validation on text that
-previously skipped. Extrapolation keeps BestOfN(N=3): a same-day paired
-two-arm measurement showed the wrapper earns its strictness on catch, unlike
-truth's case — receipts in the internal run ledger.
+behaviour. Cost note: this can add one structure-lens LLM call for inputs that
+the old keyword predicate would have skipped; inputs that already ran the
+structure lens are unaffected. Extrapolation keeps BestOfN(N=3): a same-day
+paired two-arm measurement showed the wrapper earns its strictness on catch,
+unlike truth's case — receipts in the internal run ledger.
 
 ## 2026-08-10 — Truth lens: BestOfN strictness sampling removed (N=1)
 

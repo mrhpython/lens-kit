@@ -23,7 +23,8 @@ The independent review layer that catches confidently-wrong text before it ships
 
 Paste text into the checker in your browser and read what comes back —
 the flagged line, the reason, and which checks raised nothing:
-**<https://soulfield.one/#try>** · five runs a day, no sign-up, no key.
+**<https://soulfield.one/#try>** · rate-limited, no sign-up, no key. The
+hosted service's current limits may change.
 
 Or call the same endpoint directly:
 
