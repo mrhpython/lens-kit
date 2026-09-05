@@ -37,7 +37,10 @@ Put these in your shell env or the `settings.json` hook `env`.
 
 ### Sizing the `timeout`
 
-The snippet uses `120000` ms. **Size it to the tail, not the typical.** The gate
+All adapter examples allow 600 seconds. Claude Code's command-hook `timeout`
+is in seconds ([hook reference](https://code.claude.com/docs/en/hooks)).
+This is a conservative configuration ceiling, not a latency measurement or
+completion guarantee. **Size it to the tail, not the typical.** The gate
 runs the lens set over your whole answer, so cost scales with answer length, and
 long answers are exactly the ones worth gating. A hook `timeout` is a ceiling,
 not a delay — an oversized one costs nothing when the gate is fast.

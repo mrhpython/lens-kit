@@ -36,7 +36,7 @@ not milliseconds):
           {
             "type": "command",
             "command": "lens-grok-stop-hook",
-            "timeout": 150
+            "timeout": 600
           }
         ]
       }
@@ -64,8 +64,10 @@ Environment variables:
 - `LENS_GROK_CONTEXT`: optional audience/task context.
 - The provider credential named by the selected profile, if any.
 
-Set the hook timeout to the provider's measured cold tail. A timeout means
-the external verdict is UNKNOWN, not PASS.
+All adapter examples allow 600 seconds; Grok expresses the ceiling in seconds.
+This is a conservative configuration ceiling, not a latency measurement or
+completion guarantee. Set the hook timeout to the provider's measured cold
+tail. A timeout means the external verdict is UNKNOWN, not PASS.
 
 ## Grok payload differences from Claude / Codex
 

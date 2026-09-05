@@ -6,7 +6,7 @@
           {
             "type": "command",
             "command": "lens-grok-stop-hook",
-            "timeout": 150
+            "timeout": 600
           }
         ]
       }

@@ -6,7 +6,7 @@
           {
             "type": "command",
             "command": "lens-stop-hook",
-            "timeout": 120000
+            "timeout": 600
           }
         ]
       }

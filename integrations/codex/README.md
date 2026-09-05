@@ -74,8 +74,10 @@ Environment variables:
 - `LENS_CODEX_CONTEXT`: optional audience/task context passed to lens-kit.
 - The provider credential named by the selected profile, if any.
 
-Set the hook timeout to the provider's measured cold tail. The example uses
-600 seconds because a timeout means the external verdict is UNKNOWN, not PASS.
+All adapter examples allow 600 seconds; Codex expresses the ceiling in seconds.
+This is a conservative configuration ceiling, not a latency measurement or
+completion guarantee. Set it to the provider's measured cold tail. A timeout
+means the external verdict is UNKNOWN, not PASS.
 
 ## Behavior
 

@@ -111,9 +111,10 @@ your machine. There is no bundled key and no default vendor: if the env var
 named in your profile is unset, the kit refuses to run rather than silently
 reaching for something else.
 
-Thinking-capable models (Qwen3.x and similar) need the `extra_body` block in the
-profile uncommented, or they spend the whole token budget reasoning and the gate
-times out — which the kit reports as UNKNOWN, never as a pass.
+Some thinking-capable endpoints accept provider-specific controls through the
+profile's `extra_body` block. Enable that block only when your provider's
+documentation requires it. If any endpoint exceeds the configured validation
+timeout, the kit reports UNKNOWN, never a pass.
 
 ```python
 from lens_kit import LensGate, Profile, lm_context
@@ -221,9 +222,8 @@ sell the tool. Every one of them is an internal measurement on our own frozen
 agency-domain holdout, taken on a stated date against a served model that has
 since changed. They are **not independently verifiable from outside this repo**,
 they carry **no transfer promise**, **no accuracy floor on your data**, and no
-concurrency or scale claim. Treat them as a worked example of the discipline in
-`docs/WORKED-EXAMPLE.md` — which exists precisely because one of our own numbers
-moved by eleven points with no change to the code, the data, or the local stack.
+concurrency or scale claim. Treat them as a worked example of the measurement
+discipline in `docs/WORKED-EXAMPLE.md`, not as evidence for this release.
 
 If you want a number you can trust for your own use, the honest route is the one
 this kit is built for: run it on your own material, against your own holdout,
