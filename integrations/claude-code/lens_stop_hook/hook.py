@@ -43,6 +43,14 @@ def _has_rights_hold(violations: list) -> bool:
     return any(str(item.get("lens", "")).casefold() == "rights" for item in violations)
 
 
+def _event_text(event: dict) -> str:
+    """Read the current Stop response, falling back for older payloads."""
+    message = event.get("last_assistant_message")
+    if isinstance(message, str) and message.strip():
+        return message
+    return final_assistant_text(event.get("transcript_path", ""))
+
+
 def decide(event: dict, evaluate, text: str) -> dict:
     """Return the SyncHookJSONOutput dict for one Stop event."""
     if not text or not text.strip():
@@ -89,7 +97,7 @@ def main() -> int:
     except Exception:  # noqa: BLE001
         return 0  # can't even read the event — never wedge
     try:
-        text = final_assistant_text(event.get("transcript_path", ""))
+        text = _event_text(event)
         out = decide(event, _default_evaluate, text)
     except Exception:  # noqa: BLE001 — fail per policy
         if _requires_escalation():

@@ -1,4 +1,5 @@
 # tests/test_hook.py
+from lens_stop_hook import hook
 from lens_stop_hook.hook import decide
 from lens_stop_hook.verdict import Verdict
 
@@ -16,6 +17,21 @@ def test_empty_text_allows():
     # core not even called when there's nothing to lens
     out = decide(_ev(), lambda t: (_ for _ in ()).throw(AssertionError("called")), "   ")
     assert out == {}
+
+
+def test_event_text_prefers_current_stop_message():
+    event = {
+        "last_assistant_message": "current answer",
+        "transcript_path": "/not/read",
+    }
+    assert hook._event_text(event) == "current answer"
+
+
+def test_event_text_falls_back_for_older_payload(monkeypatch):
+    monkeypatch.setattr(hook, "final_assistant_text", lambda path: f"from {path}")
+    assert hook._event_text({"transcript_path": "/tmp/session.jsonl"}) == (
+        "from /tmp/session.jsonl"
+    )
 
 
 def test_hold_first_blocks_with_guidance():

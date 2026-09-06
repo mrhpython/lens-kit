@@ -104,7 +104,7 @@ three adapters, plus `SHA256SUMS`. Configuration remains agent-specific:
 [Claude Code / Agent SDK](integrations/claude-code/README.md) ·
 [Grok](integrations/grok/README.md).
 
-<img src="docs/assets/demo.svg" alt="Terminal session: the no-credential quickstart — calibrate generate writes 24 fixtures, catches add seeds the memory, scrub redacts an API key and exits 6." width="100%">
+<img src="docs/assets/demo.svg" alt="Terminal session: the no-credential quickstart — calibrate generate writes fixtures, catches add seeds the memory, scrub redacts an API key and exits 6." width="100%">
 
 Step 2 costs whatever your endpoint charges — set `llm.model` to
 `ollama_chat/…` with `api_key_env:` omitted and it costs nothing and stays on
@@ -164,7 +164,7 @@ one agent — map, desk, numbered stages — with this gate wired in as its veri
 | **Consistency checks** (`consistency`) | Cross-artifact tripwires, pure Python: marker parity, leak scan, number parity | [Consistency checks](docs/REFERENCE.md#consistency-checks-deterministic-no-llm) |
 | **PII pre-pass** (`scrub`) | Deterministic secret/PII halt BEFORE any provider call — the secret never leaves your process | [PII pre-pass](docs/REFERENCE.md#pii-pre-pass--lens-0-deterministic-no-llm) |
 | **Catches memory** (`catches`) | Institutional memory of named defects; recurring patterns get promoted to deterministic checks | [Catches](docs/REFERENCE.md#catches--the-institutional-memory-loop-no-llm) |
-| **Stop-hook gates** | Gates a coding agent's finished answer. A non-Rights FAIL returns findings for one correction; unresolved internal low-risk output can be delivered with warnings, while public/high-risk output escalates. Rights HALT remains blocked. The validator is a separate model — the agent never grades itself. | [Codex](integrations/codex/README.md) · [Claude Code and Claude Agent SDK](integrations/claude-code/README.md) |
+| **Stop-hook gates** | Gates a coding agent's finished answer. A non-Rights FAIL returns findings for one correction; unresolved internal low-risk output can be delivered with warnings, while public/high-risk output escalates. The adapters request another block for Rights HALT; host-enforced continuation caps still apply. The validator is a separate model — the agent never grades itself. | [Codex](integrations/codex/README.md) · [Claude Code and Claude Agent SDK](integrations/claude-code/README.md) |
 | **Validator agent** | Model-agnostic protocol for the cross-relationship tier above the gate | [The validator agent](docs/REFERENCE.md#the-validator-agent--the-cross-relationship-tier) |
 
 Exit codes are load-bearing (`3` = too expensive to run, `5` = the gate missed

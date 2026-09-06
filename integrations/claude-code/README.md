@@ -2,8 +2,12 @@
 
 Runs the Qwen **outside-in** 10-lens gate on Claude Code's finished answer. On a
 non-Rights HOLD it blocks the turn and feeds the violations back for one bounded
-rework. A Rights HOLD remains blocked until cleared. The validator is a separate
-model (Qwen) — Claude never grades itself.
+rework. For a Rights HOLD, the adapter requests another block on every Stop
+invocation. Claude Code itself ends the turn after eight consecutive Stop-hook
+blocks, as documented in its
+[Stop-hook reference](https://code.claude.com/docs/en/hooks#stop), so this hook
+is not an absolute containment boundary. The validator is a separate model
+(Qwen) — Claude never grades itself.
 
 ## Install
 
@@ -63,9 +67,15 @@ Merge `settings-snippet.json` into `~/.claude/settings.json` (or a project
 | HOLD (first stop) | turn blocked; violations fed back; Claude reworks once |
 | non-Rights HOLD after rework, `internal-low` | answer finishes with a "still flagged" note |
 | non-Rights HOLD after rework, public/high-risk | remains blocked with disposition `ESCALATE` |
-| Rights HOLD | remains blocked with disposition `HALT`; sensitive values are not repeated |
+| Rights HOLD | adapter requests another block with disposition `HALT`; sensitive values are not repeated |
 | lens unavailable, `internal-low` | fail-open: finishes + "not validated" note (or `closed`: blocks once) |
 | lens unavailable, public/high-risk | remains blocked with verdict `UNKNOWN` and disposition `ESCALATE` |
+
+Claude Code overrides Stop hooks and ends the turn after eight consecutive
+blocks. Treat this adapter as a correction gate, not as a security boundary;
+use a separate publication or deployment control for material that must never
+leave the workflow. See the
+[official Stop-hook behavior](https://code.claude.com/docs/en/hooks#stop).
 
 ## Use with the Claude Agent SDK
 
@@ -95,8 +105,10 @@ forcing one rework. A second non-Rights HOLD downgrades to a warning only for
 `internal-low` work. The blocking
 Qwen gate runs off the event loop via `asyncio.to_thread`, so it does not stall the
 agent runtime. Same env config as the Claude Code hook (`LENS_HOOK_FAIL`,
-`LENS_HOOK_RISK`, `LENS_HOOK_PROFILE`, `LENS_HOOK_DAILY_CAP`). Rights HOLD always
-remains blocked; public/high-risk unresolved output escalates instead of downgrading.
+`LENS_HOOK_RISK`, `LENS_HOOK_PROFILE`, `LENS_HOOK_DAILY_CAP`). The callback
+requests another block for every Rights HOLD; public/high-risk unresolved output
+escalates instead of downgrading. Host-runtime continuation limits remain
+authoritative.
 
 Options: `make_stop_hook(domain="finance", context="...", extract_text=fn)`. Pass
 `extract_text` to feed text you captured from the message stream instead of the

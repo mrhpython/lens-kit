@@ -11,7 +11,8 @@ creates the GitHub Release only after those jobs pass and publishes a
 
 The Codex adapter keeps candidate verdict separate from workflow disposition:
 one bounded correction for non-Rights findings, risk-sensitive escalation for
-unresolved public or high-risk work, and unconditional HALT for Rights.
+unresolved public or high-risk work, and a HALT request for Rights. Host-enforced
+continuation caps remain authoritative.
 
 ## 2026-08-29 — Stop-hook gate published (Claude Code + Agent SDK)
 
@@ -33,14 +34,15 @@ for, and the docs carried a "set an absolute path" warning to compensate. It now
 falls back to `builtin_profile_path()` — the profile shipped inside `lens_kit` —
 so an unset `LENS_HOOK_PROFILE` works out of the box.
 
-The suggested hook `timeout` was `30000` ms, justified as "the lens is ~20s".
-That is the typical, not the tail, and gate cost scales with answer length — so
-the suggestion was smallest exactly where answers are most worth gating. It is
+The suggested hook `timeout` was `30000` ms, justified by one typical-duration
+observation rather than a tail measurement. Gate cost scales with answer length,
+so the suggestion was smallest exactly where answers are most worth gating. It is
 now `120000` ms with the sizing rule written down: **a hook timeout is a ceiling,
 not a delay**, so an oversized one costs nothing when the gate is fast, whereas
-an undersized one fails open *silently* — and a gate that times out on every
-substantial answer is indistinguishable from no gate at all. Measure it on your
-own provider before trusting a smaller number.
+an undersized one returns an unavailable result. The configured fail and risk
+policies then decide whether the adapter delivers with a visible warning or
+requests another block. Measure it on your own provider before trusting a
+smaller number.
 
 The test harness also assumed a directory that exists only in our working repo,
 which errored every test at import in a clean checkout. It now falls back to the
