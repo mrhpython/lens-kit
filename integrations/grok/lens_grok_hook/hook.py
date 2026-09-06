@@ -1,25 +1,20 @@
-"""Grok Stop hook: finished assistant text -> outside-in lens verdict.
+"""Grok Stop observer: finished assistant text -> outside-in lens verdict.
 
 Grok supplies the finished response as ``lastAssistantMessage`` (camelCase).
 The hook validates that frozen text with lens-kit and maps the outcomes to
-Grok's Stop-hook contract:
+an operator-visible diagnostic:
 
-* PASS: allow the turn to finish (SHIP).
-* FAIL: block once with concrete revision guidance (REVISE). After that one
-  correction, internal low-risk work may finish with explicit warnings;
-  configured public/high-risk work is escalated and does not ship.
-* HALT: a Rights failure remains blocked until the sensitive content is removed.
-* UNKNOWN: never call it PASS. Fail open with a visible warning by default, or
-  block once when ``LENS_GROK_FAIL=closed``. Configured public/high-risk work
-  is escalated and does not ship while validation is unavailable.
+* PASS: emit nothing.
+* FAIL/HALT/UNKNOWN: emit the requested disposition and safe guidance on
+  stderr for logs or a separate publication control to consume.
+
+Grok Stop hooks are passive: their stdout and exit status cannot block the
+turn. This adapter therefore makes no containment claim.
 
 Grok-specific wiring this adapter must get right:
 
-* Skip Stop fires whose ``reason`` is not ``end_turn`` (session-end observe).
 * Skip when ``subagentType`` is present (main-agent Stop only).
-* Allow-notes must not use ``additionalContext``: on Grok that keeps the
-  agent working. ``main()`` writes allow-notes to stderr and leaves stdout
-  empty so the turn can finish.
+* ``main()`` writes diagnostics to stderr and always leaves stdout empty.
 * Accept snake_case Codex/Claude keys as a compatibility fallback.
 
 Malformed input exits successfully without output because a broken hook must
@@ -221,7 +216,7 @@ def _stop_active(event: dict) -> bool:
 
 
 def _is_end_turn(event: dict) -> bool:
-    """Grok fires Stop on session end too. Gate only genuine turn completions.
+    """When a reason is supplied, gate only explicit turn completions.
 
     A missing ``reason`` is treated as end-turn so Codex/Claude-shaped test
     payloads and older envelopes still reach the gate.
@@ -336,19 +331,9 @@ def decide(
 
 
 def emit(output: dict) -> None:
-    """Write a Stop decision using Grok's blocking vocabulary only.
-
-    A Grok ``additionalContext`` on Stop keeps the agent working. Allow-notes
-    therefore go to stderr, and stdout stays empty so the turn can finish.
-    """
+    """Write a passive Stop diagnostic to stderr; stdout stays empty."""
 
     if not output:
-        return
-    if output.get("decision") == "block":
-        sys.stdout.write(json.dumps({
-            "decision": "block",
-            "reason": output.get("reason", "Lens blocked this turn."),
-        }))
         return
     note = output.get("systemMessage") or output.get("reason") or ""
     if note:
@@ -356,7 +341,7 @@ def emit(output: dict) -> None:
 
 
 def main() -> int:
-    """Read one Grok Stop event from stdin and write Grok Stop JSON, if any."""
+    """Read one Grok Stop event and emit a passive diagnostic, if any."""
 
     try:
         event = json.load(sys.stdin)

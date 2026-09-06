@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lens-grok-hook"
 version = "0.1.0"
-description = "Grok Stop hook for the lens-kit outside-in validation gate"
+description = "Observational Grok Stop adapter for the lens-kit outside-in validation gate"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"

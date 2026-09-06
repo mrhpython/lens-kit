@@ -1,7 +1,9 @@
 # lens-kit v0.1.0
 
-The first packaged GitHub release includes the core outside-in validation gate
-and stop-hook adapters for Codex, Claude Code / Claude Agent SDK, and Grok.
+The first packaged GitHub release includes the core outside-in validation gate,
+correction-request adapters for Codex and Claude Code / Claude Agent SDK, and
+an observational Grok Stop adapter. Grok documents Stop as passive, so its
+adapter reports findings but cannot block the turn.
 
 Install the core once:
 
@@ -21,7 +23,7 @@ python -m pip install \
 python -m pip install \
   "lens-stop-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/claude-code"
 
-# Grok
+# Grok (observational Stop validation)
 python -m pip install \
   "lens-grok-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/grok"
 ```

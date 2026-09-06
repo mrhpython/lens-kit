@@ -3,8 +3,10 @@
 ## 0.1.0 — 2026-09-03 — First packaged GitHub release
 
 The first GitHub Release ships eight artifacts: wheel and source archives for
-the `lens-kit` core plus installable Codex, Claude Code / Agent SDK, and Grok
-stop-hook adapters. GitHub CI runs the core and each adapter suite separately,
+the `lens-kit` core, correction-request Codex and Claude Code / Agent SDK
+adapters, and an observational Grok Stop adapter. Grok documents Stop as a
+passive event, so that adapter reports findings to stderr for a separate
+publication control to consume. GitHub CI runs each suite separately,
 then builds, checks and clean-installs the release artifacts. A `v0.1.0` tag
 creates the GitHub Release only after those jobs pass and publishes a
 `SHA256SUMS` manifest alongside the packages.

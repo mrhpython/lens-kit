@@ -93,13 +93,15 @@ python -m pip install \
 python -m pip install \
   "lens-stop-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/claude-code"
 
-# Grok
+# Grok (observational Stop validation; not a blocking hook)
 python -m pip install \
   "lens-grok-hook @ git+https://github.com/mrhpython/lens-kit.git@v0.1.0#subdirectory=integrations/grok"
 ```
 
 The GitHub Release also carries wheels and source archives for the core and all
-three adapters, plus `SHA256SUMS`. Configuration remains agent-specific:
+three adapters, plus `SHA256SUMS`. The Grok adapter is observational because
+Grok Stop events are passive; use a separate publication control when findings
+must block release. Configuration remains agent-specific:
 [Codex](integrations/codex/README.md) ·
 [Claude Code / Agent SDK](integrations/claude-code/README.md) ·
 [Grok](integrations/grok/README.md).

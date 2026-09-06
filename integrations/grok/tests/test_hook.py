@@ -298,7 +298,7 @@ def test_rights_halt_reblocks_after_revision():
     assert "raw value" not in output["reason"]
 
 
-def test_main_emits_exact_json_for_block(monkeypatch, capsys):
+def test_main_block_request_is_passive_stderr_diagnostic(monkeypatch, capsys):
     event = _event()
     monkeypatch.setattr(hook.sys, "stdin", io.StringIO(json.dumps(event)))
     monkeypatch.setattr(
@@ -307,10 +307,9 @@ def test_main_emits_exact_json_for_block(monkeypatch, capsys):
         lambda _event: {"decision": "block", "reason": "revise"},
     )
     assert hook.main() == 0
-    assert json.loads(capsys.readouterr().out) == {
-        "decision": "block",
-        "reason": "revise",
-    }
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "revise\n"
 
 
 def test_main_allow_note_goes_to_stderr_not_stdout(monkeypatch, capsys):
@@ -348,9 +347,9 @@ def test_main_uncaught_error_obeys_fail_policy(monkeypatch, capsys):
         ),
     )
     assert hook.main() == 0
-    output = json.loads(capsys.readouterr().out)
-    assert output["decision"] == "block"
-    assert "UNKNOWN" in output["reason"]
-    assert "hook runtime error" in output["reason"]
-    assert raw_credential not in output["reason"]
-    assert private_path not in output["reason"]
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "UNKNOWN" in captured.err
+    assert "hook runtime error" in captured.err
+    assert raw_credential not in captured.err
+    assert private_path not in captured.err

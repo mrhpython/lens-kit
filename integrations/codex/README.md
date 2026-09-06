@@ -45,9 +45,8 @@ not replace other Stop commands:
 }
 ```
 
-Use Codex's `/hooks` command to inspect and trust the local hook after changing
-the configuration. Codex records trust against the command and configuration
-content, so a later edit can require trust again.
+Use Codex's `/hooks` command after changing the configuration. Inspect the
+loaded command and complete any trust prompt Codex displays.
 
 Environment variables:
 
