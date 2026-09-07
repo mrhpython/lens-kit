@@ -259,6 +259,35 @@ def test_rights_halt_reblocks_after_revision():
     assert "raw value" not in output["reason"]
 
 
+def test_halt_local_hints_only_expose_category_and_line():
+    value = "sk-" + "a" * 24
+    output = hook.decide(_event("Heading\n" + value, active=True),
+                         _result(Verdict.halted([])))
+    assert output["decision"] == "block"
+    assert "API key pattern at response line 2" in output["reason"]
+    assert "not confirmed disclosures" in output["reason"]
+    assert value not in json.dumps(output)
+
+
+def test_model_only_halt_does_not_invent_location():
+    output = hook.decide(_event(), _result(Verdict.halted([
+        {"issue": "private finding", "category": "private category", "line": 99}
+    ])))
+    assert "details unavailable" in output["reason"]
+    assert "private" not in output["reason"]
+    assert "99" not in output["reason"]
+
+
+def test_halt_diagnostic_failure_still_blocks(monkeypatch):
+    def broken(_text):
+        raise RuntimeError("private detector error")
+    monkeypatch.setattr(hook, "pii_scan", broken)
+    output = hook.decide(_event(active=True), _result(Verdict.halted([])))
+    assert output["decision"] == "block"
+    assert "details unavailable" in output["reason"]
+    assert "private" not in output["reason"]
+
+
 def test_main_emits_exact_json_for_block(monkeypatch, capsys):
     event = _event()
     monkeypatch.setattr(hook.sys, "stdin", io.StringIO(json.dumps(event)))

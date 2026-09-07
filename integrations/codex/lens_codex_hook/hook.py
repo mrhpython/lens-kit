@@ -27,6 +27,7 @@ from functools import lru_cache
 from typing import Callable
 
 from lens_kit import ConfigError, LensGate, Profile, builtin_profile_path, lm_context
+from lens_kit.pii import scan as pii_scan
 
 
 _SAFE_RIGHTS_ISSUE = (
@@ -212,10 +213,34 @@ def _format_fail_reason(violations: list[dict]) -> str:
     )
 
 
-def _halt_reason() -> str:
-    return (
-        "Lens verdict HALT; disposition HALT. " + _SAFE_RIGHTS_ISSUE
+def _halt_reason(text: str) -> str:
+    # Local diagnostic hints only: never reproduce provider prose or match values.
+    # These patterns do not explain model-only Rights findings.
+    labels = {
+        "ni_number": "national insurance number pattern",
+        "ssn": "social security number pattern",
+        "credit_card": "payment card pattern",
+        "credential": "credential assignment pattern",
+        "api_key": "API key pattern",
+    }
+    hints = []
+    try:
+        for match in pii_scan(text).matches:
+            if match.pii_type not in labels:
+                continue
+            line = text.count("\n", 0, match.start) + 1
+            hint = f"{labels[match.pii_type]} at response line {line}"
+            if hint not in hints:
+                hints.append(hint)
+            if len(hints) == 5:
+                break
+    except Exception:  # diagnostics must never downgrade HALT
+        hints = []
+    detail = (
+        " Local detector hints (not confirmed disclosures): " + "; ".join(hints) + "."
+        if hints else " Safe category and location details unavailable."
     )
+    return "Lens verdict HALT; disposition HALT. " + _SAFE_RIGHTS_ISSUE + detail
 
 
 def _escalation_reason(verdict: str, detail: str) -> str:
@@ -255,7 +280,7 @@ def decide(
     if verdict.status == "HALT":
         # Rights is the only unconditional Lens hard stop. Re-blocking is
         # intentional until the candidate no longer contains the detected data.
-        return {"decision": "block", "reason": _halt_reason()}
+        return {"decision": "block", "reason": _halt_reason(text)}
 
     if verdict.status in {"FAIL", "HOLD"}:  # HOLD accepts pre-0.2 adapter callers.
         if active:
